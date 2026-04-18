@@ -9,8 +9,6 @@ const client = new Client({
 });
 
 const PREFIX = "!";
-
-// ================= START TIME =================
 const startTime = Date.now();
 
 // ================= READY =================
@@ -26,101 +24,150 @@ client.on("messageCreate", async (message) => {
   const args = message.content.slice(PREFIX.length).trim().split(" ");
   const command = args.shift().toLowerCase();
 
-  // 🆘 HELP COMMAND
+  // ================= HELP =================
   if (command === "help") {
     return message.reply(
-      `📖 **BOT COMMANDS**\n\n` +
-      `🔥 !trending - Script trending\n` +
+      `📖 **SCRIPT HUB BOT**\n\n` +
+      `🔥 !trending - Rscripts trending\n` +
       `🆕 !latest - Script terbaru\n` +
-      `📜 !script <id> - Ambil script by ID\n` +
-      `🔎 !search <nama> - Cari script\n` +
-      `🏓 !ping - Test bot\n` +
-      `⏱ !runtime - Uptime bot`
+      `📦 !home - ScriptBlox latest\n` +
+      `📜 !script <id> - Script by ID\n` +
+      `🔎 !search <name> - Cari script\n` +
+      `⏱ !runtime - Uptime bot\n` +
+      `🏓 !ping - Test bot`
     );
   }
 
-  // ⏱ RUNTIME COMMAND
+  // ================= RUNTIME =================
   if (command === "runtime") {
     const uptime = Date.now() - startTime;
 
-    const seconds = Math.floor(uptime / 1000) % 60;
-    const minutes = Math.floor(uptime / (1000 * 60)) % 60;
-    const hours = Math.floor(uptime / (1000 * 60 * 60));
+    const sec = Math.floor(uptime / 1000) % 60;
+    const min = Math.floor(uptime / (1000 * 60)) % 60;
+    const hr = Math.floor(uptime / (1000 * 60 * 60));
 
-    return message.reply(
-      `⏱ **Bot Runtime**\n\n` +
-      `🕒 ${hours}h ${minutes}m ${seconds}s`
-    );
+    return message.reply(`⏱ **Runtime:** ${hr}h ${min}m ${sec}s`);
   }
 
-  // 🏓 PING
+  // ================= PING =================
   if (command === "ping") {
     return message.reply("🏓 Pong!");
   }
 
-  // 🔥 TRENDING
+  // ================= TRENDING (RSCRIPTS) =================
   if (command === "trending") {
-    const res = await fetch("https://rscripts.net/api/v2/trending");
-    const data = await res.json();
+    try {
+      const res = await fetch("https://rscripts.net/api/v2/trending");
+      const data = await res.json();
 
-    let text = "🔥 Trending Scripts\n\n";
+      let text = "🔥 **Trending Scripts**\n\n";
 
-    data.data.slice(0, 10).forEach((s, i) => {
-      text += `${i + 1}. ${s.title}\nID: \`${s.id}\`\n\n`;
-    });
+      data.data.slice(0, 10).forEach((s, i) => {
+        text += `**${i + 1}. ${s.title}**\nID: \`${s.id}\`\n\n`;
+      });
 
-    message.reply(text);
+      message.reply(text);
+    } catch (err) {
+      console.log(err);
+      message.reply("❌ Error trending API");
+    }
   }
 
-  // 📜 SCRIPT BY ID
+  // ================= SCRIPT BY ID =================
   if (command === "script") {
     const id = args[0];
-    const res = await fetch(
-      `https://rscripts.net/api/v2/script?id=${id}`
-    );
-    const data = await res.json();
+    if (!id) return message.reply("❌ !script <id>");
 
-    if (!data.success) return message.reply("❌ Not found");
+    try {
+      const res = await fetch(
+        `https://rscripts.net/api/v2/script?id=${id}`
+      );
+      const data = await res.json();
 
-    const s = data.data;
+      if (!data.success) return message.reply("❌ Not found");
 
-    message.reply(`📜 ${s.title}\nID: \`${s.id}\``);
+      const s = data.data;
+
+      message.reply(
+        `📜 **SCRIPT INFO**\n\n` +
+        `Title: ${s.title}\n` +
+        `ID: \`${s.id}\``
+      );
+    } catch (err) {
+      console.log(err);
+      message.reply("❌ Error script API");
+    }
   }
 
-  // 🔎 SEARCH
+  // ================= SEARCH =================
   if (command === "search") {
     const q = args.join(" ").toLowerCase();
 
-    const res = await fetch("https://rscripts.net/api/v2/trending");
-    const data = await res.json();
+    try {
+      const res = await fetch("https://rscripts.net/api/v2/trending");
+      const data = await res.json();
 
-    const found = data.data.filter((s) =>
-      s.title.toLowerCase().includes(q)
-    );
+      const found = data.data.filter((s) =>
+        s.title.toLowerCase().includes(q)
+      );
 
-    let text = "🔎 Result\n\n";
+      if (!found.length) return message.reply("❌ Not found");
 
-    found.slice(0, 5).forEach((s, i) => {
-      text += `${i + 1}. ${s.title}\nID: \`${s.id}\`\n\n`;
-    });
+      let text = "🔎 **Search Result**\n\n";
 
-    message.reply(text);
+      found.slice(0, 5).forEach((s, i) => {
+        text += `**${i + 1}. ${s.title}**\nID: \`${s.id}\`\n\n`;
+      });
+
+      message.reply(text);
+    } catch (err) {
+      console.log(err);
+      message.reply("❌ Error search");
+    }
   }
 
-  // 🆕 LATEST
+  // ================= LATEST =================
   if (command === "latest") {
-    const res = await fetch(
-      "https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc"
-    );
-    const data = await res.json();
+    try {
+      const res = await fetch(
+        "https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc"
+      );
+      const data = await res.json();
 
-    let text = "🆕 Latest Scripts\n\n";
+      let text = "🆕 **Latest Scripts**\n\n";
 
-    data.scripts.slice(0, 10).forEach((s, i) => {
-      text += `${i + 1}. ${s.title}\nID: \`${s.id}\`\n\n`;
-    });
+      data.scripts.slice(0, 10).forEach((s, i) => {
+        text += `**${i + 1}. ${s.title}**\nID: \`${s.id}\`\n\n`;
+      });
 
-    message.reply(text);
+      message.reply(text);
+    } catch (err) {
+      console.log(err);
+      message.reply("❌ Error latest API");
+    }
+  }
+
+  // ================= SCRIPTBLOX HOME =================
+  if (command === "home") {
+    try {
+      const res = await fetch("https://scriptblox.com/api/script/fetch");
+      const data = await res.json();
+
+      const scripts = data.result?.scripts;
+
+      if (!scripts) return message.reply("❌ No scripts found");
+
+      let text = "📦 **ScriptBlox Latest**\n\n";
+
+      scripts.slice(0, 10).forEach((s) => {
+        text += `📌 **${s.title}**\nSlug: \`${s.slug}\`\n\n`;
+      });
+
+      message.reply(text);
+    } catch (err) {
+      console.log(err);
+      message.reply("❌ Error ScriptBlox API");
+    }
   }
 });
 
