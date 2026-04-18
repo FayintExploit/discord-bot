@@ -1,4 +1,16 @@
-const { Client, GatewayIntentBits } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  PermissionsBitField
+} = require("discord.js");
+
+// ===== FETCH FIX (Railway aman) =====
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const client = new Client({
   intents: [
@@ -12,87 +24,146 @@ const client = new Client({
 const PREFIX = "!";
 const startTime = Date.now();
 
-// ================= KEY SYSTEM =================
+// ===== STORAGE =====
 const keys = new Map();
-function generateKey() {
-  return Math.random().toString(36).substring(2, 10).toUpperCase();
-}
+const favorites = new Map();
+const history = new Map();
 
-// ================= READY =================
+// ===== READY =====
 client.on("ready", () => {
   console.log(`✅ BOT ONLINE: ${client.user.tag}`);
 });
 
-// ================= MESSAGE =================
+// ===== MESSAGE =====
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith(PREFIX)) return;
 
-  const args = message.content.slice(PREFIX.length).trim().split(" ");
+  const args = message.content.slice(PREFIX.length).split(" ");
   const command = args.shift().toLowerCase();
 
-  // ================= HELP =================
+  // ===== HELP =====
   if (command === "help") {
     return message.reply(
-      `📖 **SCRIPT HUB BOT**\n\n` +
-      `🔥 !trending\n🆕 !latest\n📦 !home\n🔎 !search\n📜 !script\n🎲 !random\n🔥 !top\n📊 !stats\n📡 !api\n📌 !info\n⏱ !runtime\n📢 !update\n📦 !panel\n🎮 !ps`
+      `📖 COMMAND\n\n` +
+      `!search !home !trending !latest\n` +
+      `!favorite !history\n` +
+      `!panel !getkey !redeem\n` +
+      `!ps !game\n` +
+      `!runtime !ping !stats`
     );
   }
 
-  // ================= PANEL =================
+  // ===== PANEL =====
   if (command === "panel") {
     return message.reply(
-      `📦 **SCRIPT HUB PANEL**\n\n` +
-      `🔑 !getkey\n🎟️ !redeem <key>\n📜 !getscript\n👑 !getrole <name>`
+      `📦 PANEL\n\n` +
+      `🔑 !getkey\n🎟️ !redeem <key>\n📜 !getscript`
     );
   }
 
-  // ================= KEY =================
+  // ===== KEY =====
   if (command === "getkey") {
-    const key = generateKey();
+    const key = Math.random().toString(36).substring(2, 10);
     keys.set(message.author.id, key);
-    return message.reply(`🔑 KEY: ${key}`);
+    return message.reply(`🔑 ${key}`);
   }
 
   if (command === "redeem") {
-    const input = args[0];
-    const userKey = keys.get(message.author.id);
-
-    if (!input) return message.reply("❌ !redeem <key>");
-    if (!userKey) return message.reply("❌ No key");
-    if (input !== userKey) return message.reply("❌ Wrong key");
-
-    return message.reply("✅ Key valid");
+    const key = args[0];
+    if (keys.get(message.author.id) !== key)
+      return message.reply("❌ Wrong key");
+    return message.reply("✅ Valid key");
   }
 
-  // ================= SCRIPT =================
-  if (command === "getscript") {
-    try {
-      const res = await fetch("https://scriptblox.com/api/script/fetch");
-      const data = await res.json();
+  // ===== SEARCH (EMBED + BUTTON) =====
+  if (command === "search") {
+    const q = args.join(" ");
+    if (!q) return message.reply("❌ !search <name>");
 
-      const s = data?.result?.scripts?.[0];
-      const url = `https://scriptblox.com/script/${s.slug}`;
+    const res = await fetch(
+      `https://scriptblox.com/api/script/search?q=${encodeURIComponent(q)}`
+    );
+    const data = await res.json();
 
-      return message.reply(`📜 ${s.title}\n🔗 ${url}`);
-    } catch {
-      message.reply("❌ Error script");
-    }
+    const scripts = data?.result?.scripts;
+    if (!scripts || scripts.length === 0)
+      return message.reply("❌ Not found");
+
+    let page = 0;
+
+    const embed = () => {
+      const s = scripts[page];
+      return new EmbedBuilder()
+        .setTitle(s.title)
+        .setDescription(`🔗 https://scriptblox.com/script/${s.slug}`)
+        .setFooter({ text: `Page ${page + 1}/${scripts.length}` })
+        .setColor(0x00ffcc);
+    };
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("prev").setLabel("⬅️").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("next").setLabel("➡️").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("fav").setLabel("⭐").setStyle(ButtonStyle.Success)
+    );
+
+    const msg = await message.reply({
+      embeds: [embed()],
+      components: [row],
+    });
+
+    const collector = msg.createMessageComponentCollector({ time: 60000 });
+
+    collector.on("collect", async (i) => {
+      if (i.user.id !== message.author.id)
+        return i.reply({ content: "❌ Not yours", ephemeral: true });
+
+      if (i.customId === "next") page++;
+      if (i.customId === "prev") page--;
+
+      if (page < 0) page = scripts.length - 1;
+      if (page >= scripts.length) page = 0;
+
+      if (i.customId === "fav") {
+        const userFav = favorites.get(i.user.id) || [];
+        userFav.push(scripts[page]);
+        favorites.set(i.user.id, userFav);
+        return i.reply({ content: "⭐ Saved", ephemeral: true });
+      }
+
+      await i.update({ embeds: [embed()] });
+    });
+
+    history.set(message.author.id, scripts.slice(0, 5));
   }
 
-  // ================= ROLE =================
-  if (command === "getrole") {
-    const roleName = args.join(" ");
-    const role = message.guild.roles.cache.find(r => r.name === roleName);
-    if (!role) return message.reply("❌ Role not found");
+  // ===== FAVORITE =====
+  if (command === "favorite") {
+    const fav = favorites.get(message.author.id);
+    if (!fav) return message.reply("❌ No favorite");
 
-    const member = await message.guild.members.fetch(message.author.id);
-    await member.roles.add(role);
+    let text = "⭐ FAVORITE\n\n";
+    fav.forEach((s) => {
+      text += `${s.title}\nhttps://scriptblox.com/script/${s.slug}\n\n`;
+    });
 
-    return message.reply(`👑 Got role: ${role.name}`);
+    message.reply(text);
   }
 
-  // ================= PS RANDOM =================
+  // ===== HISTORY =====
+  if (command === "history") {
+    const hist = history.get(message.author.id);
+    if (!hist) return message.reply("❌ No history");
+
+    let text = "🧾 HISTORY\n\n";
+    hist.forEach((s) => {
+      text += `${s.title}\nhttps://scriptblox.com/script/${s.slug}\n\n`;
+    });
+
+    message.reply(text);
+  }
+
+  // ===== PS RANDOM =====
   if (command === "ps") {
     const type = args[0];
 
@@ -105,113 +176,32 @@ client.on("messageCreate", async (message) => {
       ]
     };
 
-    if (!type) {
-      return message.reply(
-        `🎮 PRIVATE SERVER\n\n!ps bf\n!ps fisch`
-      );
-    }
+    if (!type) return message.reply("!ps bf / !ps fisch");
+    if (!ps[type]) return message.reply("❌ invalid");
 
-    if (!ps[type]) return message.reply("❌ bf / fisch only");
-
-    const list = ps[type];
-    const randomLink = list[Math.floor(Math.random() * list.length)];
-
-    return message.reply(`🔗 ${randomLink}`);
+    const link = ps[type][Math.floor(Math.random() * ps[type].length)];
+    message.reply(`🔗 ${link}`);
   }
 
-  // ================= BASIC =================
-  if (command === "ping") return message.reply("🏓 Pong!");
+  // ===== BASIC =====
+  if (command === "ping") return message.reply("🏓 Pong");
 
   if (command === "runtime") {
-    const t = Date.now() - startTime;
-    return message.reply(`⏱ ${Math.floor(t / 1000)}s`);
+    return message.reply(`⏱ ${Math.floor((Date.now() - startTime)/1000)}s`);
   }
 
   if (command === "stats") {
     return message.reply(`📊 ${client.user.tag}`);
   }
 
-  if (command === "info") {
-    return message.reply(`🤖 Script Hub Bot v1.2`);
-  }
+  // ===== ADMIN =====
+  if (command === "say") {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
+      return message.reply("❌ Admin only");
 
-  if (command === "update") {
-    return message.reply(`📢 Panel + PS + Key added`);
-  }
-
-  // ================= SCRIPTBLOX =================
-  if (command === "home") {
-    try {
-      const res = await fetch("https://scriptblox.com/api/script/fetch");
-      const data = await res.json();
-
-      let text = "📦 Scripts\n\n";
-      data.result.scripts.slice(0, 5).forEach(s => {
-        text += `${s.title}\nhttps://scriptblox.com/script/${s.slug}\n\n`;
-      });
-
-      message.reply(text);
-    } catch {
-      message.reply("❌ Error");
-    }
-  }
-
-  if (command === "search") {
-    const q = args.join(" ");
-    if (!q) return message.reply("❌ !search");
-
-    try {
-      const res = await fetch(
-        `https://scriptblox.com/api/script/search?q=${encodeURIComponent(q)}`
-      );
-      const data = await res.json();
-
-      let text = "🔎 Result\n\n";
-      data.result.scripts.slice(0, 3).forEach(s => {
-        text += `${s.title}\nhttps://scriptblox.com/script/${s.slug}\n\n`;
-      });
-
-      message.reply(text);
-    } catch {
-      message.reply("❌ Error");
-    }
-  }
-
-  // ================= RSCRIPTS =================
-  if (command === "trending") {
-    try {
-      const res = await fetch("https://rscripts.net/api/v2/trending");
-      const data = await res.json();
-
-      let text = "🔥 Trending\n\n";
-      data.data.slice(0, 5).forEach(s => {
-        text += `${s.title}\nID: ${s.id}\n\n`;
-      });
-
-      message.reply(text);
-    } catch {
-      message.reply("❌ Error");
-    }
-  }
-
-  if (command === "latest") {
-    try {
-      const res = await fetch(
-        "https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc"
-      );
-      const data = await res.json();
-
-      let text = "🆕 Latest\n\n";
-      data.scripts.slice(0, 5).forEach(s => {
-        text += `${s.title}\nID: ${s.id}\n\n`;
-      });
-
-      message.reply(text);
-    } catch {
-      message.reply("❌ Error");
-    }
+    message.channel.send(args.join(" "));
   }
 });
 
-// ================= LOGIN =================
+// ===== LOGIN =====
 client.login(process.env.TOKEN);
