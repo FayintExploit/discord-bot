@@ -16,7 +16,7 @@ client.on("ready", () => {
   console.log(`✅ BOT ONLINE: ${client.user.tag}`);
 });
 
-// ================= MESSAGE =================
+// ================= MESSAGE HANDLER =================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith(PREFIX)) return;
@@ -27,15 +27,26 @@ client.on("messageCreate", async (message) => {
   // ================= HELP =================
   if (command === "help") {
     return message.reply(
-      `📖 **SCRIPT HUB BOT**\n\n` +
-      `🔥 !trending - Rscripts trending\n` +
-      `🆕 !latest - Script terbaru\n` +
-      `📦 !home - ScriptBlox latest\n` +
-      `📜 !script <id> - Script by ID\n` +
-      `🔎 !search <name> - Cari script\n` +
-      `⏱ !runtime - Uptime bot\n` +
-      `🏓 !ping - Test bot`
+      `📖 **SCRIPT HUB BOT COMMANDS**\n\n` +
+      `🔥 !trending\n` +
+      `🆕 !latest\n` +
+      `📦 !home\n` +
+      `🔎 !search <name>\n` +
+      `📜 !script <id>\n` +
+      `🎲 !random\n` +
+      `🔥 !top\n` +
+      `📊 !stats\n` +
+      `📡 !api\n` +
+      `📌 !info\n` +
+      `⏱ !runtime\n` +
+      `📢 !update\n` +
+      `🏓 !ping`
     );
+  }
+
+  // ================= PING =================
+  if (command === "ping") {
+    return message.reply("🏓 Pong!");
   }
 
   // ================= RUNTIME =================
@@ -46,15 +57,101 @@ client.on("messageCreate", async (message) => {
     const min = Math.floor(uptime / (1000 * 60)) % 60;
     const hr = Math.floor(uptime / (1000 * 60 * 60));
 
-    return message.reply(`⏱ **Runtime:** ${hr}h ${min}m ${sec}s`);
+    return message.reply(`⏱ Runtime: ${hr}h ${min}m ${sec}s`);
   }
 
-  // ================= PING =================
-  if (command === "ping") {
-    return message.reply("🏓 Pong!");
+  // ================= UPDATE LOG =================
+  if (command === "update") {
+    return message.reply(
+      `📢 **UPDATE LOG**\n\n` +
+      `🆕 Script Hub Bot v1.1\n` +
+      `🔥 ScriptBlox search fix\n` +
+      `📦 Home scripts added\n` +
+      `🎲 Random script added\n` +
+      `📊 Stats system\n` +
+      `📡 API checker\n` +
+      `⏱ Runtime tracker\n\n` +
+      `🛠 Next: Embed UI + Buttons`
+    );
   }
 
-  // ================= TRENDING (RSCRIPTS) =================
+  // ================= STATS =================
+  if (command === "stats") {
+    return message.reply(
+      `📊 **BOT STATS**\n\n` +
+      `🤖 ${client.user.tag}\n` +
+      `⏱ Uptime: ${Math.floor((Date.now() - startTime) / 1000)}s\n` +
+      `⚡ Platform: Railway\n` +
+      `📡 APIs: ScriptBlox + Rscripts`
+    );
+  }
+
+  // ================= API STATUS =================
+  if (command === "api") {
+    return message.reply(
+      `📡 **API STATUS**\n\n` +
+      `🔥 ScriptBlox: Online\n` +
+      `🚀 Rscripts: Online\n` +
+      `⚡ Status: Stable`
+    );
+  }
+
+  // ================= INFO =================
+  if (command === "info") {
+    return message.reply(
+      `📌 **BOT INFO**\n\n` +
+      `🤖 Script Hub Bot\n` +
+      `📡 Multi API Script Finder\n` +
+      `⚙️ discord.js v14\n` +
+      `🚀 Hosted on Railway\n` +
+      `📅 Version: v1.1`
+    );
+  }
+
+  // ================= RANDOM SCRIPT =================
+  if (command === "random") {
+    try {
+      const res = await fetch("https://scriptblox.com/api/script/fetch");
+      const data = await res.json();
+
+      const scripts = data?.result?.scripts;
+
+      if (!scripts || scripts.length === 0)
+        return message.reply("❌ No scripts found");
+
+      const s = scripts[Math.floor(Math.random() * scripts.length)];
+
+      return message.reply(
+        `🎲 **Random Script**\n\n` +
+        `📌 ${s.title}\n` +
+        `Slug: \`${s.slug}\``
+      );
+    } catch {
+      message.reply("❌ Error random script");
+    }
+  }
+
+  // ================= TOP SCRIPT =================
+  if (command === "top") {
+    try {
+      const res = await fetch("https://rscripts.net/api/v2/trending");
+      const data = await res.json();
+
+      const top = data?.data?.[0];
+
+      if (!top) return message.reply("❌ No data");
+
+      return message.reply(
+        `🔥 **TOP SCRIPT**\n\n` +
+        `📌 ${top.title}\n` +
+        `ID: \`${top.id}\``
+      );
+    } catch {
+      message.reply("❌ Error top script");
+    }
+  }
+
+  // ================= TRENDING =================
   if (command === "trending") {
     try {
       const res = await fetch("https://rscripts.net/api/v2/trending");
@@ -62,13 +159,12 @@ client.on("messageCreate", async (message) => {
 
       let text = "🔥 **Trending Scripts**\n\n";
 
-      data.data.slice(0, 10).forEach((s, i) => {
+      (data.data || []).slice(0, 10).forEach((s, i) => {
         text += `**${i + 1}. ${s.title}**\nID: \`${s.id}\`\n\n`;
       });
 
       message.reply(text);
-    } catch (err) {
-      console.log(err);
+    } catch {
       message.reply("❌ Error trending API");
     }
   }
@@ -93,36 +189,8 @@ client.on("messageCreate", async (message) => {
         `Title: ${s.title}\n` +
         `ID: \`${s.id}\``
       );
-    } catch (err) {
-      console.log(err);
+    } catch {
       message.reply("❌ Error script API");
-    }
-  }
-
-  // ================= SEARCH =================
-  if (command === "search") {
-    const q = args.join(" ").toLowerCase();
-
-    try {
-      const res = await fetch("https://rscripts.net/api/v2/trending");
-      const data = await res.json();
-
-      const found = data.data.filter((s) =>
-        s.title.toLowerCase().includes(q)
-      );
-
-      if (!found.length) return message.reply("❌ Not found");
-
-      let text = "🔎 **Search Result**\n\n";
-
-      found.slice(0, 5).forEach((s, i) => {
-        text += `**${i + 1}. ${s.title}**\nID: \`${s.id}\`\n\n`;
-      });
-
-      message.reply(text);
-    } catch (err) {
-      console.log(err);
-      message.reply("❌ Error search");
     }
   }
 
@@ -136,13 +204,12 @@ client.on("messageCreate", async (message) => {
 
       let text = "🆕 **Latest Scripts**\n\n";
 
-      data.scripts.slice(0, 10).forEach((s, i) => {
+      (data.scripts || []).slice(0, 10).forEach((s, i) => {
         text += `**${i + 1}. ${s.title}**\nID: \`${s.id}\`\n\n`;
       });
 
       message.reply(text);
-    } catch (err) {
-      console.log(err);
+    } catch {
       message.reply("❌ Error latest API");
     }
   }
@@ -153,20 +220,48 @@ client.on("messageCreate", async (message) => {
       const res = await fetch("https://scriptblox.com/api/script/fetch");
       const data = await res.json();
 
-      const scripts = data.result?.scripts;
+      const scripts = data?.result?.scripts;
 
-      if (!scripts) return message.reply("❌ No scripts found");
+      if (!scripts || scripts.length === 0)
+        return message.reply("❌ No scripts found");
 
-      let text = "📦 **ScriptBlox Latest**\n\n";
+      let text = "📦 **ScriptBlox Latest Scripts**\n\n";
 
       scripts.slice(0, 10).forEach((s) => {
         text += `📌 **${s.title}**\nSlug: \`${s.slug}\`\n\n`;
       });
 
       message.reply(text);
-    } catch (err) {
-      console.log(err);
+    } catch {
       message.reply("❌ Error ScriptBlox API");
+    }
+  }
+
+  // ================= SEARCH =================
+  if (command === "search") {
+    const q = args.join(" ").trim();
+    if (!q) return message.reply("❌ !search <name>");
+
+    try {
+      const res = await fetch(
+        `https://scriptblox.com/api/script/search?q=${encodeURIComponent(q)}`
+      );
+      const data = await res.json();
+
+      const scripts = data?.result?.scripts;
+
+      if (!scripts || scripts.length === 0)
+        return message.reply("❌ Not found");
+
+      let text = "🔎 **Search Result**\n\n";
+
+      scripts.slice(0, 5).forEach((s, i) => {
+        text += `**${i + 1}. ${s.title}**\nSlug: \`${s.slug}\`\n\n`;
+      });
+
+      message.reply(text);
+    } catch {
+      message.reply("❌ Error search API");
     }
   }
 });
