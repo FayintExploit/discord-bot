@@ -16,7 +16,7 @@ client.on("ready", () => {
   console.log(`✅ BOT ONLINE: ${client.user.tag}`);
 });
 
-// ================= MESSAGE HANDLER =================
+// ================= MESSAGE =================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith(PREFIX)) return;
@@ -27,7 +27,7 @@ client.on("messageCreate", async (message) => {
   // ================= HELP =================
   if (command === "help") {
     return message.reply(
-      `📖 **SCRIPT HUB BOT COMMANDS**\n\n` +
+      `📖 **SCRIPT HUB BOT**\n\n` +
       `🔥 !trending\n` +
       `🆕 !latest\n` +
       `📦 !home\n` +
@@ -60,18 +60,16 @@ client.on("messageCreate", async (message) => {
     return message.reply(`⏱ Runtime: ${hr}h ${min}m ${sec}s`);
   }
 
-  // ================= UPDATE LOG =================
+  // ================= UPDATE =================
   if (command === "update") {
     return message.reply(
       `📢 **UPDATE LOG**\n\n` +
       `🆕 Script Hub Bot v1.1\n` +
       `🔥 ScriptBlox search fix\n` +
-      `📦 Home scripts added\n` +
-      `🎲 Random script added\n` +
-      `📊 Stats system\n` +
-      `📡 API checker\n` +
-      `⏱ Runtime tracker\n\n` +
-      `🛠 Next: Embed UI + Buttons`
+      `🔗 Auto link system\n` +
+      `🎲 Random script\n` +
+      `📊 Stats + API checker\n` +
+      `⏱ Runtime tracker`
     );
   }
 
@@ -86,13 +84,12 @@ client.on("messageCreate", async (message) => {
     );
   }
 
-  // ================= API STATUS =================
+  // ================= API =================
   if (command === "api") {
     return message.reply(
       `📡 **API STATUS**\n\n` +
       `🔥 ScriptBlox: Online\n` +
-      `🚀 Rscripts: Online\n` +
-      `⚡ Status: Stable`
+      `🚀 Rscripts: Online`
     );
   }
 
@@ -101,44 +98,43 @@ client.on("messageCreate", async (message) => {
     return message.reply(
       `📌 **BOT INFO**\n\n` +
       `🤖 Script Hub Bot\n` +
-      `📡 Multi API Script Finder\n` +
+      `📡 Multi Script Finder\n` +
       `⚙️ discord.js v14\n` +
-      `🚀 Hosted on Railway\n` +
-      `📅 Version: v1.1`
+      `🚀 Railway Hosted\n` +
+      `📅 v1.1 Auto Link`
     );
   }
 
-  // ================= RANDOM SCRIPT =================
+  // ================= RANDOM =================
   if (command === "random") {
     try {
       const res = await fetch("https://scriptblox.com/api/script/fetch");
       const data = await res.json();
 
       const scripts = data?.result?.scripts;
-
       if (!scripts || scripts.length === 0)
         return message.reply("❌ No scripts found");
 
       const s = scripts[Math.floor(Math.random() * scripts.length)];
+      const url = `https://scriptblox.com/script/${s.slug}`;
 
       return message.reply(
         `🎲 **Random Script**\n\n` +
         `📌 ${s.title}\n` +
-        `Slug: \`${s.slug}\``
+        `🔗 ${url}`
       );
     } catch {
       message.reply("❌ Error random script");
     }
   }
 
-  // ================= TOP SCRIPT =================
+  // ================= TOP =================
   if (command === "top") {
     try {
       const res = await fetch("https://rscripts.net/api/v2/trending");
       const data = await res.json();
 
       const top = data?.data?.[0];
-
       if (!top) return message.reply("❌ No data");
 
       return message.reply(
@@ -169,7 +165,7 @@ client.on("messageCreate", async (message) => {
     }
   }
 
-  // ================= SCRIPT BY ID =================
+  // ================= SCRIPT =================
   if (command === "script") {
     const id = args[0];
     if (!id) return message.reply("❌ !script <id>");
@@ -214,21 +210,23 @@ client.on("messageCreate", async (message) => {
     }
   }
 
-  // ================= SCRIPTBLOX HOME =================
+  // ================= HOME (AUTO LINK) =================
   if (command === "home") {
     try {
       const res = await fetch("https://scriptblox.com/api/script/fetch");
       const data = await res.json();
 
       const scripts = data?.result?.scripts;
-
       if (!scripts || scripts.length === 0)
         return message.reply("❌ No scripts found");
 
       let text = "📦 **ScriptBlox Latest Scripts**\n\n";
 
       scripts.slice(0, 10).forEach((s) => {
-        text += `📌 **${s.title}**\nSlug: \`${s.slug}\`\n\n`;
+        const url = `https://scriptblox.com/script/${s.slug}`;
+
+        text += `📌 **${s.title}**\n`;
+        text += `🔗 ${url}\n\n`;
       });
 
       message.reply(text);
@@ -237,7 +235,7 @@ client.on("messageCreate", async (message) => {
     }
   }
 
-  // ================= SEARCH =================
+  // ================= SEARCH (AUTO LINK) =================
   if (command === "search") {
     const q = args.join(" ").trim();
     if (!q) return message.reply("❌ !search <name>");
@@ -249,19 +247,21 @@ client.on("messageCreate", async (message) => {
       const data = await res.json();
 
       const scripts = data?.result?.scripts;
-
       if (!scripts || scripts.length === 0)
         return message.reply("❌ Not found");
 
       let text = "🔎 **Search Result**\n\n";
 
       scripts.slice(0, 5).forEach((s, i) => {
-        text += `**${i + 1}. ${s.title}**\nSlug: \`${s.slug}\`\n\n`;
+        const url = `https://scriptblox.com/script/${s.slug}`;
+
+        text += `**${i + 1}. ${s.title}**\n`;
+        text += `🔗 ${url}\n\n`;
       });
 
       message.reply(text);
     } catch {
-      message.reply("❌ Error search API");
+      message.reply("❌ Error ScriptBlox search API");
     }
   }
 });
