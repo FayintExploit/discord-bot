@@ -1,16 +1,13 @@
 {
-  "name": "script-hub-bot",
-  "version": "1.2.0",
-  "description": "Discord Script Hub Bot (ScriptBlox + Rscripts + Panel System)",
+  "name": "script-hub-advanced",
+  "version": "5.0.0",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
     "node-fetch": "^3.3.2"
-  },
-  "engines": {
-    "node": "18.x"
   }
 }
