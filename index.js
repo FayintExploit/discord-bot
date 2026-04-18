@@ -5,11 +5,19 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
   ],
 });
 
 const PREFIX = "!";
 const startTime = Date.now();
+
+// ================= KEY SYSTEM =================
+const keys = new Map();
+
+function generateKey() {
+  return Math.random().toString(36).substring(2, 10).toUpperCase();
+}
 
 // ================= READY =================
 client.on("ready", () => {
@@ -40,8 +48,76 @@ client.on("messageCreate", async (message) => {
       `📌 !info\n` +
       `⏱ !runtime\n` +
       `📢 !update\n` +
-      `🏓 !ping`
+      `🔑 !panel`
     );
+  }
+
+  // ================= PANEL =================
+  if (command === "panel") {
+    return message.reply(
+      `📦 **SCRIPT HUB PANEL**\n\n` +
+      `🔑 !getkey - ambil key\n` +
+      `🎟️ !redeem <key> - pakai key\n` +
+      `📜 !getscript - script gratis\n` +
+      `👑 !getrole <name> - ambil role`
+    );
+  }
+
+  // ================= GET KEY =================
+  if (command === "getkey") {
+    const key = generateKey();
+    keys.set(message.author.id, key);
+
+    return message.reply(
+      `🔑 **KEY KAMU**\n\n${key}\n\nGunakan: !redeem <key>`
+    );
+  }
+
+  // ================= REDEEM KEY =================
+  if (command === "redeem") {
+    const input = args[0];
+    const userKey = keys.get(message.author.id);
+
+    if (!input) return message.reply("❌ !redeem <key>");
+    if (!userKey) return message.reply("❌ Kamu belum punya key");
+    if (input !== userKey) return message.reply("❌ Key salah");
+
+    return message.reply("✅ Key valid! Access granted.");
+  }
+
+  // ================= GET SCRIPT =================
+  if (command === "getscript") {
+    try {
+      const res = await fetch("https://scriptblox.com/api/script/fetch");
+      const data = await res.json();
+
+      const s = data?.result?.scripts?.[0];
+      if (!s) return message.reply("❌ No script found");
+
+      const url = `https://scriptblox.com/script/${s.slug}`;
+
+      return message.reply(
+        `📜 **FREE SCRIPT**\n\n` +
+        `${s.title}\n` +
+        `🔗 ${url}`
+      );
+    } catch {
+      message.reply("❌ Error script");
+    }
+  }
+
+  // ================= GET ROLE =================
+  if (command === "getrole") {
+    const roleName = args.join(" ");
+    if (!roleName) return message.reply("❌ !getrole <name>");
+
+    const role = message.guild.roles.cache.find(r => r.name === roleName);
+    if (!role) return message.reply("❌ Role tidak ditemukan");
+
+    const member = await message.guild.members.fetch(message.author.id);
+    await member.roles.add(role);
+
+    return message.reply(`👑 Role didapat: ${role.name}`);
   }
 
   // ================= PING =================
@@ -64,12 +140,12 @@ client.on("messageCreate", async (message) => {
   if (command === "update") {
     return message.reply(
       `📢 **UPDATE LOG**\n\n` +
-      `🆕 Script Hub Bot v1.1\n` +
-      `🔥 ScriptBlox search fix\n` +
-      `🔗 Auto link system\n` +
-      `🎲 Random script\n` +
-      `📊 Stats + API checker\n` +
-      `⏱ Runtime tracker`
+      `🆕 Script Hub Bot v1.2\n` +
+      `🔑 Key system added\n` +
+      `📦 Panel system added\n` +
+      `📜 Get script system\n` +
+      `👑 Role system\n` +
+      `🔗 Auto link system`
     );
   }
 
@@ -101,7 +177,7 @@ client.on("messageCreate", async (message) => {
       `📡 Multi Script Finder\n` +
       `⚙️ discord.js v14\n` +
       `🚀 Railway Hosted\n` +
-      `📅 v1.1 Auto Link`
+      `📅 v1.2 Panel Update`
     );
   }
 
@@ -180,7 +256,7 @@ client.on("messageCreate", async (message) => {
 
       const s = data.data;
 
-      message.reply(
+      return message.reply(
         `📜 **SCRIPT INFO**\n\n` +
         `Title: ${s.title}\n` +
         `ID: \`${s.id}\``
@@ -210,7 +286,7 @@ client.on("messageCreate", async (message) => {
     }
   }
 
-  // ================= HOME (AUTO LINK) =================
+  // ================= HOME =================
   if (command === "home") {
     try {
       const res = await fetch("https://scriptblox.com/api/script/fetch");
@@ -225,8 +301,7 @@ client.on("messageCreate", async (message) => {
       scripts.slice(0, 10).forEach((s) => {
         const url = `https://scriptblox.com/script/${s.slug}`;
 
-        text += `📌 **${s.title}**\n`;
-        text += `🔗 ${url}\n\n`;
+        text += `📌 **${s.title}**\n🔗 ${url}\n\n`;
       });
 
       message.reply(text);
@@ -235,7 +310,7 @@ client.on("messageCreate", async (message) => {
     }
   }
 
-  // ================= SEARCH (AUTO LINK) =================
+  // ================= SEARCH =================
   if (command === "search") {
     const q = args.join(" ").trim();
     if (!q) return message.reply("❌ !search <name>");
@@ -255,13 +330,12 @@ client.on("messageCreate", async (message) => {
       scripts.slice(0, 5).forEach((s, i) => {
         const url = `https://scriptblox.com/script/${s.slug}`;
 
-        text += `**${i + 1}. ${s.title}**\n`;
-        text += `🔗 ${url}\n\n`;
+        text += `**${i + 1}. ${s.title}**\n🔗 ${url}\n\n`;
       });
 
       message.reply(text);
     } catch {
-      message.reply("❌ Error ScriptBlox search API");
+      message.reply("❌ Error search API");
     }
   }
 });
