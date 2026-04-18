@@ -11,8 +11,15 @@ const {
 
 const fs = require("fs");
 
-// ===== LOAD DB =====
-let db = JSON.parse(fs.readFileSync("./database.json", "utf-8"));
+// ===== DATABASE SAFE LOAD =====
+let db;
+try {
+  db = JSON.parse(fs.readFileSync("./database.json", "utf-8"));
+} catch {
+  db = { channels: [], vip: [], favorites: {} };
+  fs.writeFileSync("./database.json", JSON.stringify(db, null, 2));
+}
+
 const saveDB = () =>
   fs.writeFileSync("./database.json", JSON.stringify(db, null, 2));
 
@@ -32,25 +39,27 @@ const PREFIX = "!";
 
 // ===== READY =====
 client.on("ready", () => {
-  console.log(`✅ ${client.user.tag}`);
+  console.log(`✅ BOT ONLINE: ${client.user.tag}`);
 
-  // ===== AUTO POST LOOP =====
+  // ===== AUTO POST =====
   setInterval(async () => {
-    if (!db.channel) return;
-
-    const ch = client.channels.cache.get(db.channel);
-    if (!ch) return;
+    if (!db.channels.length) return;
 
     try {
       const res = await fetch("https://scriptblox.com/api/script/fetch");
       const data = await res.json();
       const s = data.result.scripts[0];
 
-      ch.send(
-        `📢 **AUTO SCRIPT**\n📌 ${s.title}\n🔗 https://scriptblox.com/script/${s.slug}`
-      );
+      for (const id of db.channels) {
+        const ch = client.channels.cache.get(id);
+        if (!ch) continue;
+
+        ch.send(
+          `📢 **AUTO SCRIPT**\n📌 ${s.title}\n🔗 https://scriptblox.com/script/${s.slug}`
+        );
+      }
     } catch {}
-  }, 300000); // 5 menit
+  }, 300000);
 });
 
 // ===== MESSAGE =====
@@ -58,25 +67,80 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   // ===== CHANNEL LOCK =====
-  if (db.channel && message.channel.id !== db.channel) return;
+  if (db.channels.length > 0 && !db.channels.includes(message.channel.id)) return;
 
   if (!message.content.startsWith(PREFIX)) return;
 
   const args = message.content.slice(PREFIX.length).split(" ");
   const cmd = args.shift().toLowerCase();
 
-  // ================= SET CHANNEL =================
+  // ================= 📖 HELP =================
+  if (cmd === "help") {
+    return message.reply(
+      `📖 **SCRIPT HUB MENU**\n\n` +
+      `🔎 !search <name>\n` +
+      `📦 !home\n🔥 !trending\n🆕 !latest\n🎲 !random\n\n` +
+      `⭐ !favorite\n💎 !vip\n\n` +
+      `🎮 !ps\n📢 !share\n\n` +
+      `🔒 !setchannel !removechannel\n\n` +
+      `⚙️ !ping !update`
+    );
+  }
+
+  // ================= 🏓 =================
+  if (cmd === "ping") return message.reply("🏓 Pong!");
+
+  // ================= 📢 UPDATE =================
+  if (cmd === "update") {
+    return message.reply(
+      `📢 **UPDATE v6**\n\n` +
+      `🔄 Dropdown + next page\n` +
+      `💾 Database\n` +
+      `📢 Auto post\n` +
+      `💰 VIP\n` +
+      `🔒 2 Channel support\n` +
+      `⭐ Favorite`
+    );
+  }
+
+  // ================= 🎮 PS =================
+  if (cmd === "ps") {
+    return message.reply(
+      `🎮 **PRIVATE SERVER**\n\n` +
+      `🥇 Blox Fruits:\nhttps://www.roblox.com/games/2753915549?privateServerLinkCode=11538954597931190236578830175408\n\n` +
+      `🎣 Fisch:\nhttps://www.roblox.com/games/16732694052?privateServerLinkCode=19364623954829962758354802577209`
+    );
+  }
+
+  // ================= 🔒 SET CHANNEL =================
   if (cmd === "setchannel") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
       return message.reply("❌ Admin only");
 
-    db.channel = message.channel.id;
+    if (db.channels.includes(message.channel.id))
+      return message.reply("⚠️ Sudah diset");
+
+    if (db.channels.length >= 2)
+      return message.reply("❌ Max 2 channel");
+
+    db.channels.push(message.channel.id);
     saveDB();
 
-    return message.reply("✅ Channel diset (bot hanya aktif di sini)");
+    return message.reply("✅ Channel ditambahkan");
   }
 
-  // ================= VIP =================
+  // ================= ❌ REMOVE CHANNEL =================
+  if (cmd === "removechannel") {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
+      return;
+
+    db.channels = db.channels.filter(id => id !== message.channel.id);
+    saveDB();
+
+    message.reply("🗑 Channel dihapus");
+  }
+
+  // ================= 💰 VIP =================
   if (cmd === "addvip") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
       return;
@@ -92,10 +156,10 @@ client.on("messageCreate", async (message) => {
     if (!db.vip.includes(message.author.id))
       return message.reply("❌ VIP only");
 
-    message.reply("💎 Kamu VIP");
+    message.reply("💎 Kamu VIP!");
   }
 
-  // ================= SEARCH PAGINATION =================
+  // ================= 🔎 SEARCH =================
   if (cmd === "search") {
     const q = args.join(" ");
     if (!q) return message.reply("❌ !search <name>");
@@ -112,21 +176,18 @@ client.on("messageCreate", async (message) => {
 
     const getPage = () => scripts.slice(page * 5, page * 5 + 5);
 
-    const makeMenu = () => {
-      const list = getPage();
-
-      return new ActionRowBuilder().addComponents(
+    const menu = () =>
+      new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId("menu")
-          .setPlaceholder(`Page ${page + 1}`)
+          .setPlaceholder(`📄 Page ${page + 1}`)
           .addOptions(
-            list.map((s, i) => ({
+            getPage().map((s, i) => ({
               label: s.title.substring(0, 100),
               value: String(i),
             }))
           )
       );
-    };
 
     const nav = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId("prev").setLabel("⬅️").setStyle(ButtonStyle.Secondary),
@@ -134,8 +195,8 @@ client.on("messageCreate", async (message) => {
     );
 
     const msg = await message.reply({
-      content: "🔎 Pilih script",
-      components: [makeMenu(), nav],
+      content: "🔎 Pilih script 👇",
+      components: [menu(), nav],
     });
 
     const collector = msg.createMessageComponentCollector({ time: 60000 });
@@ -152,7 +213,6 @@ client.on("messageCreate", async (message) => {
       if (i.customId === "menu") {
         const s = getPage()[parseInt(i.values[0])];
 
-        // SAVE FAVORITE
         if (!db.favorites[i.user.id]) db.favorites[i.user.id] = [];
         db.favorites[i.user.id].push(s);
         saveDB();
@@ -162,19 +222,16 @@ client.on("messageCreate", async (message) => {
         );
       }
 
-      await i.update({
-        components: [makeMenu(), nav],
-      });
+      await i.update({ components: [menu(), nav] });
     });
   }
 
-  // ================= FAVORITE =================
+  // ================= ⭐ FAVORITE =================
   if (cmd === "favorite") {
     const fav = db.favorites[message.author.id];
     if (!fav) return message.reply("❌ Kosong");
 
     let text = "⭐ FAVORITE\n\n";
-
     fav.forEach((s) => {
       text += `${s.title}\nhttps://scriptblox.com/script/${s.slug}\n\n`;
     });
@@ -182,8 +239,20 @@ client.on("messageCreate", async (message) => {
     message.reply(text);
   }
 
-  // ================= BASIC =================
-  if (cmd === "ping") return message.reply("🏓 Pong");
+  // ================= 📢 SHARE =================
+  if (cmd === "share") {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
+      return message.reply("❌ Admin only");
+
+    const ch = message.mentions.channels.first();
+    if (!ch) return message.reply("❌ Tag channel");
+
+    const text = args.slice(1).join(" ");
+    ch.send(`📢 ${text}`);
+
+    message.reply("✅ Terkirim");
+  }
+
 });
 
 // ===== LOGIN =====
