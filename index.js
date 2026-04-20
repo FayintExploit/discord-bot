@@ -1,7 +1,6 @@
 const {
   Client,
   GatewayIntentBits,
-  EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -11,12 +10,26 @@ const {
 
 const fs = require("fs");
 
-// ===== DATABASE SAFE LOAD =====
+// ===== OWNER =====
+const OWNER_ID = "1321669868503957655";
+const isOwner = (id) => id === OWNER_ID;
+
+// ===== DATABASE =====
 let db;
 try {
   db = JSON.parse(fs.readFileSync("./database.json", "utf-8"));
 } catch {
-  db = { channels: [], vip: [], favorites: {} };
+  db = {
+    channels: [],
+    vip: [],
+    favorites: {},
+    access: [],
+    autopost: true,
+    ps: {
+      bf: "https://www.roblox.com/games/2753915549?privateServerLinkCode=11538954597931190236578830175408",
+      fisch: "https://www.roblox.com/games/16732694052?privateServerLinkCode=19364623954829962758354802577209"
+    }
+  };
   fs.writeFileSync("./database.json", JSON.stringify(db, null, 2));
 }
 
@@ -35,14 +48,13 @@ const client = new Client({
   ],
 });
 
-const PREFIX = "!";
-
 // ===== READY =====
 client.on("ready", () => {
   console.log(`✅ BOT ONLINE: ${client.user.tag}`);
 
-  // ===== AUTO POST =====
+  // AUTO POST
   setInterval(async () => {
+    if (!db.autopost) return;
     if (!db.channels.length) return;
 
     try {
@@ -54,9 +66,7 @@ client.on("ready", () => {
         const ch = client.channels.cache.get(id);
         if (!ch) continue;
 
-        ch.send(
-          `📢 **AUTO SCRIPT**\n📌 ${s.title}\n🔗 https://scriptblox.com/script/${s.slug}`
-        );
+        ch.send(`📢 **AUTO SCRIPT**\n📌 ${s.title}\n🔗 https://scriptblox.com/script/${s.slug}`);
       }
     } catch {}
   }, 300000);
@@ -66,70 +76,65 @@ client.on("ready", () => {
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  // ===== CHANNEL LOCK =====
+  // CHANNEL LOCK
   if (db.channels.length > 0 && !db.channels.includes(message.channel.id)) return;
 
-  if (!message.content.startsWith(PREFIX)) return;
+  // ACCESS SYSTEM
+  if (db.access.length > 0 && !db.access.includes(message.author.id)) return;
 
-  const args = message.content.slice(PREFIX.length).split(" ");
+  // PREFIX SUPPORT
+  const prefixes = ["!", "?", "/"];
+  const usedPrefix = prefixes.find(p => message.content.startsWith(p));
+  if (!usedPrefix) return;
+
+  const args = message.content.slice(usedPrefix.length).trim().split(" ");
   const cmd = args.shift().toLowerCase();
 
-  // ================= 📖 HELP =================
+  // ================= HELP =================
   if (cmd === "help") {
     return message.reply(
       `📖 **SCRIPT HUB MENU**\n\n` +
-      `🔎 !search <name>\n` +
-      `📦 !home\n🔥 !trending\n🆕 !latest\n🎲 !random\n\n` +
-      `⭐ !favorite\n💎 !vip\n\n` +
-      `🎮 !ps\n📢 !share\n\n` +
-      `🔒 !setchannel !removechannel\n\n` +
-      `⚙️ !ping !update`
+      `🔎 search\n📦 home\n🔥 trending\n🆕 latest\n🎲 random\n\n` +
+      `⭐ favorite\n💎 vip\n\n` +
+      `🎮 ps\n📢 share\n\n` +
+      `🔒 setchannel / removechannel\n🔐 addaccess\n\n` +
+      `⚙️ ping update\n\n` +
+      `👑 Owner:\nsetps\n autopost`
     );
   }
 
-  // ================= 🏓 =================
+  // ================= PING =================
   if (cmd === "ping") return message.reply("🏓 Pong!");
 
-  // ================= 📢 UPDATE =================
+  // ================= UPDATE =================
   if (cmd === "update") {
     return message.reply(
-      `📢 **UPDATE v6**\n\n` +
-      `🔄 Dropdown + next page\n` +
-      `💾 Database\n` +
-      `📢 Auto post\n` +
-      `💰 VIP\n` +
-      `🔒 2 Channel support\n` +
-      `⭐ Favorite`
+      `📢 **UPDATE v7**\n\n` +
+      `👑 Owner system\n` +
+      `🔤 Multi prefix (! ? /)\n` +
+      `📢 Auto post toggle\n` +
+      `🔒 2 channel system\n` +
+      `🔎 Dropdown search\n` +
+      `⭐ Favorite save\n`
     );
   }
 
-  // ================= 🎮 PS =================
-  if (cmd === "ps") {
-    return message.reply(
-      `🎮 **PRIVATE SERVER**\n\n` +
-      `🥇 Blox Fruits:\nhttps://www.roblox.com/games/2753915549?privateServerLinkCode=11538954597931190236578830175408\n\n` +
-      `🎣 Fisch:\nhttps://www.roblox.com/games/16732694052?privateServerLinkCode=19364623954829962758354802577209`
-    );
-  }
-
-  // ================= 🔒 SET CHANNEL =================
+  // ================= SET CHANNEL =================
   if (cmd === "setchannel") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
       return message.reply("❌ Admin only");
 
-    if (db.channels.includes(message.channel.id))
-      return message.reply("⚠️ Sudah diset");
-
     if (db.channels.length >= 2)
       return message.reply("❌ Max 2 channel");
 
-    db.channels.push(message.channel.id);
-    saveDB();
+    if (!db.channels.includes(message.channel.id)) {
+      db.channels.push(message.channel.id);
+      saveDB();
+    }
 
     return message.reply("✅ Channel ditambahkan");
   }
 
-  // ================= ❌ REMOVE CHANNEL =================
   if (cmd === "removechannel") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
       return;
@@ -140,18 +145,26 @@ client.on("messageCreate", async (message) => {
     message.reply("🗑 Channel dihapus");
   }
 
-  // ================= 💰 VIP =================
-  if (cmd === "addvip") {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
-      return;
+  // ================= ACCESS =================
+  if (cmd === "addaccess") {
+    if (!isOwner(message.author.id)) return;
+
+    if (message.mentions.everyone) {
+      db.access = [];
+      saveDB();
+      return message.reply("🌍 Semua akses dibuka");
+    }
 
     const user = message.mentions.users.first();
-    db.vip.push(user.id);
+    if (!user) return;
+
+    db.access.push(user.id);
     saveDB();
 
-    message.reply("💰 VIP ditambahkan");
+    message.reply("✅ Akses ditambah");
   }
 
+  // ================= VIP =================
   if (cmd === "vip") {
     if (!db.vip.includes(message.author.id))
       return message.reply("❌ VIP only");
@@ -159,20 +172,46 @@ client.on("messageCreate", async (message) => {
     message.reply("💎 Kamu VIP!");
   }
 
-  // ================= 🔎 SEARCH =================
+  // ================= PS =================
+  if (cmd === "ps") {
+    return message.reply(
+      `🎮 PS\n\nBlox Fruits:\n${db.ps.bf}\n\nFisch:\n${db.ps.fisch}`
+    );
+  }
+
+  if (cmd === "setps") {
+    if (!isOwner(message.author.id)) return;
+
+    const type = args[0];
+    const link = args[1];
+
+    db.ps[type] = link;
+    saveDB();
+
+    message.reply("✅ PS updated");
+  }
+
+  // ================= AUTPOST =================
+  if (cmd === "autopost") {
+    if (!isOwner(message.author.id)) return;
+
+    const mode = args[0];
+    db.autopost = mode === "on";
+    saveDB();
+
+    message.reply(`📢 AutoPost: ${db.autopost}`);
+  }
+
+  // ================= SEARCH =================
   if (cmd === "search") {
     const q = args.join(" ");
-    if (!q) return message.reply("❌ !search <name>");
+    if (!q) return;
 
-    const res = await fetch(
-      `https://scriptblox.com/api/script/search?q=${encodeURIComponent(q)}`
-    );
+    const res = await fetch(`https://scriptblox.com/api/script/search?q=${q}`);
     const data = await res.json();
 
-    const scripts = data.result.scripts;
-    if (!scripts) return;
-
     let page = 0;
+    const scripts = data.result.scripts;
 
     const getPage = () => scripts.slice(page * 5, page * 5 + 5);
 
@@ -180,11 +219,11 @@ client.on("messageCreate", async (message) => {
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId("menu")
-          .setPlaceholder(`📄 Page ${page + 1}`)
+          .setPlaceholder(`Page ${page + 1}`)
           .addOptions(
             getPage().map((s, i) => ({
               label: s.title.substring(0, 100),
-              value: String(i),
+              value: String(i)
             }))
           )
       );
@@ -195,15 +234,14 @@ client.on("messageCreate", async (message) => {
     );
 
     const msg = await message.reply({
-      content: "🔎 Pilih script 👇",
-      components: [menu(), nav],
+      content: "🔎 Pilih script",
+      components: [menu(), nav]
     });
 
     const collector = msg.createMessageComponentCollector({ time: 60000 });
 
     collector.on("collect", async (i) => {
-      if (i.user.id !== message.author.id)
-        return i.reply({ content: "❌ Bukan kamu", ephemeral: true });
+      if (i.user.id !== message.author.id) return;
 
       if (i.customId === "next") page++;
       if (i.customId === "prev") page--;
@@ -217,40 +255,24 @@ client.on("messageCreate", async (message) => {
         db.favorites[i.user.id].push(s);
         saveDB();
 
-        return i.reply(
-          `📜 ${s.title}\n🔗 https://scriptblox.com/script/${s.slug}`
-        );
+        return i.reply(`📜 ${s.title}\nhttps://scriptblox.com/script/${s.slug}`);
       }
 
       await i.update({ components: [menu(), nav] });
     });
   }
 
-  // ================= ⭐ FAVORITE =================
+  // ================= FAVORITE =================
   if (cmd === "favorite") {
     const fav = db.favorites[message.author.id];
     if (!fav) return message.reply("❌ Kosong");
 
     let text = "⭐ FAVORITE\n\n";
-    fav.forEach((s) => {
+    fav.forEach(s => {
       text += `${s.title}\nhttps://scriptblox.com/script/${s.slug}\n\n`;
     });
 
     message.reply(text);
-  }
-
-  // ================= 📢 SHARE =================
-  if (cmd === "share") {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator))
-      return message.reply("❌ Admin only");
-
-    const ch = message.mentions.channels.first();
-    if (!ch) return message.reply("❌ Tag channel");
-
-    const text = args.slice(1).join(" ");
-    ch.send(`📢 ${text}`);
-
-    message.reply("✅ Terkirim");
   }
 
 });
