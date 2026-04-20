@@ -80,92 +80,169 @@ client.on("messageCreate", async (message) => {
     return message.reply(lang === "id" ? "🇮🇩 Bahasa diubah" : "🇬🇧 Language changed");
   }
 
-  // 📖 HELP
-  if (cmd === "help") {
+if (cmd === "help") {
+  return message.reply(
+`📖 **SCRIPT HUB BOT - FULL COMMAND LIST** 🚀
+
+━━━━━━━━━━━━━━━━━━
+🔎 **SCRIPT COMMANDS**
+🔹 !search <name> → cari script
+🔹 !latest → script terbaru
+🔹 !home → script terbaru (alt)
+🔹 !trending → script populer
+🔹 !random → script random
+
+━━━━━━━━━━━━━━━━━━
+🎮 **PRIVATE SERVER**
+🔹 !ps → lihat private server
+🔹 !setps bf <link> → set PS Blox Fruits
+🔹 !setps fisch <link> → set PS Fisch
+
+━━━━━━━━━━━━━━━━━━
+⚙️ **UTILITY**
+🔹 !ping → cek bot
+🔹 !update → info update bot
+
+━━━━━━━━━━━━━━━━━━
+🌐 **LANGUAGE**
+🔹 !lang id → Bahasa Indonesia
+🔹 !lang en → English
+
+━━━━━━━━━━━━━━━━━━
+🔒 **CHANNEL SYSTEM**
+🔹 !setchannel → set channel bot
+🔹 !removechannel → hapus channel
+
+━━━━━━━━━━━━━━━━━━
+🔐 **ACCESS SYSTEM**
+🔹 !addaccess @user → tambah akses
+🔹 !addaccess @everyone → semua bisa pakai
+🔹 !removeaccess @user → hapus akses
+
+━━━━━━━━━━━━━━━━━━
+⭐ **USER SYSTEM**
+🔹 !favorite → lihat script favorit
+
+━━━━━━━━━━━━━━━━━━
+👑 **OWNER ONLY**
+🔹 !setps → edit private server
+🔹 !autopost on/off → auto post script
+
+━━━━━━━━━━━━━━━━━━
+🔥 Script Hub Pro Bot
+⚡ Stable • Fast • Anti Error 
+`
+  );
+}
+
+// ================= UPDATE =================
+  if (cmd === "update") {
     return message.reply(
-      t(message.author.id,
+`📢 **UPDATE LOG**
 
-`📖 **MENU BOT LENGKAP** 🚀
+✔ Fix API RScripts
+✔ Command latest/home/trending/random
+✔ Clean UI & help
+✔ Stable di Railway
 
-🔎 **SCRIPT**
-🔹 !search <nama>
-🔹 !home
-🔹 !trending
-🔹 !latest
-🔹 !random
-
-⭐ **USER**
-🔹 !favorite
-🔹 !vip
-
-🎮 **PRIVATE SERVER**
-🔹 !ps
-
-🔒 **CHANNEL**
-🔹 !setchannel
-🔹 !removechannel
-
-🔐 **ACCESS**
-🔹 !addaccess @user
-🔹 !addaccess @everyone
-🔹 !removeaccess @user
-
-⚙️ **UTILITY**
-🔹 !ping
-🔹 !update
-🔹 !lang id/en
-
-👑 **OWNER**
-🔹 !setps
-🔹 !autopost on/off
-
-━━━━━━━━━━━━━━━
-🔥 Script Hub Pro
-`,
-
-`📖 **FULL BOT MENU** 🚀
-
-🔎 **SCRIPT**
-🔹 !search <name>
-🔹 !home
-🔹 !trending
-🔹 !latest
-🔹 !random
-
-⭐ **USER**
-🔹 !favorite
-🔹 !vip
-
-🎮 **PRIVATE SERVER**
-🔹 !ps
-
-🔒 **CHANNEL**
-🔹 !setchannel
-🔹 !removechannel
-
-🔐 **ACCESS**
-🔹 !addaccess @user
-🔹 !addaccess @everyone
-🔹 !removeaccess @user
-
-⚙️ **UTILITY**
-🔹 !ping
-🔹 !update
-🔹 !lang id/en
-
-👑 **OWNER**
-🔹 !setps
-🔹 !autopost on/off
-
-━━━━━━━━━━━━━━━
-🔥 Script Hub Pro
-`)
+🚀 Version: vFinal`
     );
   }
 
   // 🏓
   if (cmd === "ping") return message.reply("🏓 Pong!");
+// ================= 🆕 LATEST =================
+if (cmd === "latest") {
+  try {
+    const res = await fetch("https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc");
+    const data = await res.json();
 
+    if (!data.scripts || data.scripts.length === 0)
+      return message.reply("❌ No scripts found");
+
+    let text = "🆕 **LATEST SCRIPTS**\n\n";
+
+    data.scripts.slice(0, 10).forEach((s, i) => {
+      text += `**${i + 1}. ${s.title}**\n`;
+      text += `🔗 https://rscripts.net/script/${s.slug || s.id}\n\n`;
+    });
+
+    message.reply(text);
+  } catch (e) {
+    console.error(e);
+    message.reply("❌ Error latest API");
+  }
+}
+
+// ================= 📦 HOME =================
+if (cmd === "home") {
+  try {
+    const res = await fetch("https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc");
+    const data = await res.json();
+
+    if (!data.scripts) return message.reply("❌ No data");
+
+    let text = "📦 **HOME SCRIPTS**\n\n";
+
+    data.scripts.slice(0, 10).forEach((s, i) => {
+      text += `**${i + 1}. ${s.title}**\n`;
+      text += `🔗 https://rscripts.net/script/${s.slug || s.id}\n\n`;
+    });
+
+    message.reply(text);
+  } catch (e) {
+    console.error(e);
+    message.reply("❌ Error home API");
+  }
+}
+
+// ================= 🔥 TRENDING =================
+if (cmd === "trending") {
+  try {
+    const res = await fetch("https://rscripts.net/api/v2/scripts?page=1");
+    const data = await res.json();
+
+    if (!data.scripts) return message.reply("❌ No data");
+
+    // random sort buat simulasi trending
+    const sorted = [...data.scripts].sort(() => 0.5 - Math.random());
+
+    let text = "🔥 **TRENDING SCRIPTS**\n\n";
+
+    sorted.slice(0, 10).forEach((s, i) => {
+      text += `**${i + 1}. ${s.title}**\n`;
+      text += `🔗 https://rscripts.net/script/${s.slug || s.id}\n\n`;
+    });
+
+    message.reply(text);
+  } catch (e) {
+    console.error(e);
+    message.reply("❌ Error trending API");
+  }
+}
+
+// ================= 🎲 RANDOM =================
+if (cmd === "random") {
+  try {
+    const res = await fetch("https://rscripts.net/api/v2/scripts?page=1");
+    const data = await res.json();
+
+    const scripts = data.scripts;
+    if (!scripts || scripts.length === 0)
+      return message.reply("❌ No scripts found");
+
+    const s = scripts[Math.floor(Math.random() * scripts.length)];
+
+    message.reply(
+      `🎲 **RANDOM SCRIPT**\n\n` +
+      `📜 ${s.title}\n` +
+      `🔗 https://rscripts.net/script/${s.slug || s.id}`
+    );
+  } catch (e) {
+    console.error(e);
+    message.reply("❌ Error random API");
+  }
+}
   // 🎮 PS
   if (cmd === "ps") {
     const row = new ActionRowBuilder().addComponents(
