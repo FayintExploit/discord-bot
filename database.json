@@ -1,5 +1,11 @@
 {
   "channels": [],
   "vip": [],
-  "favorites": {}
+  "favorites": {},
+  "access": [],
+  "autopost": true,
+  "ps": {
+    "bf": "https://www.roblox.com/games/2753915549?privateServerLinkCode=11538954597931190236578830175408",
+    "fisch": "https://www.roblox.com/games/16732694052?privateServerLinkCode=19364623954829962758354802577209"
+  }
 }
