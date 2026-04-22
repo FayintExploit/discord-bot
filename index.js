@@ -4,13 +4,12 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  StringSelectMenuBuilder,
-  PermissionsBitField
+  StringSelectMenuBuilder
 } = require("discord.js");
 
 const fs = require("fs");
 
-const OWNER_ID = "1321669868503957655";
+const OWNER_ID = "1321669868503957755";
 const isOwner = (id) => id === OWNER_ID;
 
 // ===== DATABASE =====
@@ -32,10 +31,6 @@ try {
 
 const saveDB = () =>
   fs.writeFileSync("./database.json", JSON.stringify(db, null, 2));
-
-// ===== LANG =====
-const getLang = (id) => db.lang[id] || "id";
-const t = (id, indo, eng) => (getLang(id) === "id" ? indo : eng);
 
 // ===== FETCH =====
 const fetch = (...args) =>
@@ -68,187 +63,85 @@ client.on("messageCreate", async (message) => {
   const args = message.content.slice(used.length).trim().split(" ");
   const cmd = args.shift().toLowerCase();
 
-  // 🌐 LANG
-  if (cmd === "lang") {
-    const lang = args[0];
-    if (!["id", "en"].includes(lang))
-      return message.reply("❌ !lang id/en");
-
-    db.lang[message.author.id] = lang;
-    saveDB();
-
-    return message.reply(lang === "id" ? "🇮🇩 Bahasa diubah" : "🇬🇧 Language changed");
-  }
-
-if (cmd === "help") {
-  return message.reply(
+  // ===== HELP =====
+  if (cmd === "help") {
+    return message.reply(
 `📖 **SCRIPT HUB BOT - FULL COMMAND LIST** 🚀
 
 ━━━━━━━━━━━━━━━━━━
 🔎 **SCRIPT COMMANDS**
-🔹 !search <name> → cari script
-🔹 !latest → script terbaru
-🔹 !home → script terbaru (alt)
-🔹 !trending → script populer
-🔹 !random → script random
+🔹 !search <name>
+🔹 !latest
+🔹 !home
+🔹 !trending
+🔹 !random
 
 ━━━━━━━━━━━━━━━━━━
 🎮 **PRIVATE SERVER**
-🔹 !ps → lihat private server
-🔹 !setps bf <link> → set PS Blox Fruits
-🔹 !setps fisch <link> → set PS Fisch
+🔹 !ps
+🔹 !setps bf <link>
+🔹 !setps fisch <link>
 
 ━━━━━━━━━━━━━━━━━━
 ⚙️ **UTILITY**
-🔹 !ping → cek bot
-🔹 !update → info update bot
+🔹 !ping
+🔹 !update
 
 ━━━━━━━━━━━━━━━━━━
 🌐 **LANGUAGE**
-🔹 !lang id → Bahasa Indonesia
-🔹 !lang en → English
-
-━━━━━━━━━━━━━━━━━━
-🔒 **CHANNEL SYSTEM**
-🔹 !setchannel → set channel bot
-🔹 !removechannel → hapus channel
-
-━━━━━━━━━━━━━━━━━━
-🔐 **ACCESS SYSTEM**
-🔹 !addaccess @user → tambah akses
-🔹 !addaccess @everyone → semua bisa pakai
-🔹 !removeaccess @user → hapus akses
+🔹 !lang id
+🔹 !lang en
 
 ━━━━━━━━━━━━━━━━━━
 ⭐ **USER SYSTEM**
-🔹 !favorite → lihat script favorit
+🔹 !favorite
 
 ━━━━━━━━━━━━━━━━━━
-👑 **OWNER ONLY**
-🔹 !setps → edit private server
-🔹 !autopost on/off → auto post script
+👑 OWNER ONLY
+🔹 !autopost on/off
 
 ━━━━━━━━━━━━━━━━━━
-🔥 Script Hub Pro Bot
-⚡ Stable • Fast • Anti Error 
-`
-  );
-}
-
-// ================= UPDATE =================
-  if (cmd === "update") {
-    return message.reply(
-`📢 **UPDATE LOG**
-
-✔ Fix API RScripts
-✔ Command latest/home/trending/random
-✔ Clean UI & help
-✔ Stable di Railway
-
-🚀 Version: vFinal`
+🔥 Script Hub Pro Bot`
     );
   }
 
-  // 🏓
+  // ===== PING =====
   if (cmd === "ping") return message.reply("🏓 Pong!");
-// ================= 🆕 LATEST =================
-if (cmd === "latest") {
-  try {
+
+  // ===== UPDATE =====
+  if (cmd === "update") {
+    return message.reply("🚀 Bot stable version");
+  }
+
+  // ===== LATEST =====
+  if (cmd === "latest") {
     const res = await fetch("https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc");
     const data = await res.json();
 
-    if (!data.scripts || data.scripts.length === 0)
-      return message.reply("❌ No scripts found");
+    let text = "🆕 LATEST\n\n";
 
-    let text = "🆕 **LATEST SCRIPTS**\n\n";
-
-    data.scripts.slice(0, 10).forEach((s, i) => {
-      text += `**${i + 1}. ${s.title}**\n`;
-      text += `🔗 https://rscripts.net/script/${s.slug || s.id}\n\n`;
+    data.scripts.slice(0, 5).forEach((s, i) => {
+      text += `${i + 1}. ${s.title}\nhttps://rscripts.net/script/${s.slug || s.id}\n\n`;
     });
 
-    message.reply(text);
-  } catch (e) {
-    console.error(e);
-    message.reply("❌ Error latest API");
+    return message.reply(text);
   }
-}
 
-// ================= 📦 HOME =================
-if (cmd === "home") {
-  try {
-    const res = await fetch("https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc");
-    const data = await res.json();
-
-    if (!data.scripts) return message.reply("❌ No data");
-
-    let text = "📦 **HOME SCRIPTS**\n\n";
-
-    data.scripts.slice(0, 10).forEach((s, i) => {
-      text += `**${i + 1}. ${s.title}**\n`;
-      text += `🔗 https://rscripts.net/script/${s.slug || s.id}\n\n`;
-    });
-
-    message.reply(text);
-  } catch (e) {
-    console.error(e);
-    message.reply("❌ Error home API");
-  }
-}
-
-// ================= 🔥 TRENDING =================
-if (cmd === "trending") {
-  try {
+  // ===== RANDOM =====
+  if (cmd === "random") {
     const res = await fetch("https://rscripts.net/api/v2/scripts?page=1");
     const data = await res.json();
 
-    if (!data.scripts) return message.reply("❌ No data");
+    const s = data.scripts[Math.floor(Math.random() * data.scripts.length)];
 
-    // random sort buat simulasi trending
-    const sorted = [...data.scripts].sort(() => 0.5 - Math.random());
-
-    let text = "🔥 **TRENDING SCRIPTS**\n\n";
-
-    sorted.slice(0, 10).forEach((s, i) => {
-      text += `**${i + 1}. ${s.title}**\n`;
-      text += `🔗 https://rscripts.net/script/${s.slug || s.id}\n\n`;
-    });
-
-    message.reply(text);
-  } catch (e) {
-    console.error(e);
-    message.reply("❌ Error trending API");
+    return message.reply(`${s.title}\nhttps://rscripts.net/script/${s.slug || s.id}`);
   }
-}
 
-// ================= 🎲 RANDOM =================
-if (cmd === "random") {
-  try {
-    const res = await fetch("https://rscripts.net/api/v2/scripts?page=1");
-    const data = await res.json();
-
-    const scripts = data.scripts;
-    if (!scripts || scripts.length === 0)
-      return message.reply("❌ No scripts found");
-
-    const s = scripts[Math.floor(Math.random() * scripts.length)];
-
-    message.reply(
-      `🎲 **RANDOM SCRIPT**\n\n` +
-      `📜 ${s.title}\n` +
-      `🔗 https://rscripts.net/script/${s.slug || s.id}`
-    );
-  } catch (e) {
-    console.error(e);
-    message.reply("❌ Error random API");
-  }
-}
-  // 🎮 PS
+  // ===== PS =====
   if (cmd === "ps") {
     const row = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("psmenu")
-        .setPlaceholder("🎮 Pilih Game")
         .addOptions([
           { label: "Blox Fruits", value: "bf" },
           { label: "Fisch", value: "fisch" }
@@ -256,7 +149,7 @@ if (cmd === "random") {
     );
 
     const msg = await message.reply({
-      content: "🎮 Pilih Private Server 👇",
+      content: "🎮 Choose Server",
       components: [row]
     });
 
@@ -264,46 +157,39 @@ if (cmd === "random") {
 
     collector.on("collect", async (i) => {
       if (i.user.id !== message.author.id) return;
-
-      const link = db.ps[i.values[0]] || "Belum ada";
-      i.reply(`🔗 ${link}`);
+      i.reply(db.ps[i.values[0]] || "Not set");
     });
   }
 
-  // 👑 SET PS
+  // ===== SETPS =====
   if (cmd === "setps") {
     if (!isOwner(message.author.id))
       return message.reply("❌ Owner only");
 
-    const type = args[0];
-    const link = args.slice(1).join(" ");
-
-    db.ps[type] = link;
+    db.ps[args[0]] = args[1];
     saveDB();
 
-    message.reply("✅ PS updated");
+    return message.reply("✅ Updated");
   }
 
-  // 🔎 SEARCH PRO
+  // ===== SEARCH =====
   if (cmd === "search") {
     const q = args.join(" ");
     if (!q) return;
 
     const res = await fetch(`https://scriptblox.com/api/script/search?q=${q}`);
     const data = await res.json();
-
     const scripts = data?.result?.scripts;
     if (!scripts) return;
 
     let page = 0;
-
     const getPage = () => scripts.slice(page * 5, page * 5 + 5);
 
     const menu = () =>
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId("menu")
-          .setPlaceholder(`📄 Page ${page + 1}`)
+          .setPlaceholder(`Page ${page + 1}`)
           .addOptions(
             getPage().map((s, i) => ({
               label: s.title.substring(0, 100),
@@ -318,7 +204,7 @@ if (cmd === "random") {
     );
 
     const msg = await message.reply({
-      content: "🔎 Pilih script 👇",
+      content: "🔎 Select script",
       components: [menu(), nav]
     });
 
@@ -326,7 +212,7 @@ if (cmd === "random") {
 
     collector.on("collect", async (i) => {
       if (i.user.id !== message.author.id)
-        return i.reply({ content: "❌ Bukan kamu", ephemeral: true });
+        return i.reply({ content: "❌ Not yours", ephemeral: true });
 
       if (i.customId === "next") page++;
       if (i.customId === "prev") page--;
@@ -334,12 +220,15 @@ if (cmd === "random") {
 
       if (i.customId === "menu") {
         const s = getPage()[parseInt(i.values[0])];
+        const link = `https://scriptblox.com/script/${s.slug || s.id}`;
 
         const embed = {
           title: `📜 ${s.title}`,
-          url: `https://scriptblox.com/script/${s.slug}`,
           description:
-            `👤 ${s.user?.username || "Unknown"}\n⭐ ${(Math.random()*5).toFixed(1)}\n📊 ${Math.floor(Math.random()*5000)}`,
+            `👤 ${s.user?.username || "Unknown"}\n\n` +
+            "```lua\n" +
+            `loadstring(game:HttpGet("${link}"))()\n` +
+            "```",
           image: {
             url: s.image || "https://i.imgur.com/8Km9tLL.png"
           },
@@ -353,10 +242,10 @@ if (cmd === "random") {
     });
   }
 
-  // ⭐ FAVORITE
+  // ===== FAVORITE =====
   if (cmd === "favorite") {
     const fav = db.favorites[message.author.id];
-    if (!fav) return message.reply("❌ Kosong");
+    if (!fav) return message.reply("❌ Empty");
 
     let text = "⭐ FAVORITE\n\n";
     fav.forEach(s => {
@@ -365,7 +254,6 @@ if (cmd === "random") {
 
     message.reply(text);
   }
-
 });
 
 // ===== LOGIN =====
