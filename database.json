@@ -3,13 +3,30 @@
   "vip": [],
   "favorites": {},
   "access": [],
-  "autopost": { "enabled": false, "channel": null, "interval": 30 },
-  "ps": { "bf": "", "fisch": "" },
+  "autopost": {
+    "enabled": false,
+    "channel": null,
+    "interval": 30
+  },
+  "ps": {
+    "bf": "",
+    "fisch": ""
+  },
   "lang": {},
   "ratings": {},
   "reviews": {},
   "stats": {},
   "warns": {},
   "banned": [],
-  "muted": {}
+  "muted": {},
+  "coins": {},
+  "lastDaily": {},
+  "booster": {},
+  "purchases": {},
+  "bookmarks": {},
+  "scriptTags": {},
+  "welcomeCfg": {},
+  "logCfg": {},
+  "giveaways": {},
+  "triviaActive": {}
 }
