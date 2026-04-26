@@ -28,5 +28,13 @@
   "welcomeCfg": {},
   "logCfg": {},
   "giveaways": {},
-  "triviaActive": {}
+  "triviaActive": {},
+  "premiumScripts": {},
+  "tickets": {},
+  "ticketCfg": {},
+  "xp": {},
+  "levelCfg": {},
+  "automodCfg": {},
+  "spamTracker": {},
+  "reminders": {}
 }
