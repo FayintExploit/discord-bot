@@ -28,16 +28,5 @@
   "welcomeCfg": {},
   "logCfg": {},
   "giveaways": {},
-  "triviaActive": {},
-  "premiumScripts": {},
-  "tickets": {},
-  "ticketCfg": {},
-  "keys": {},
-  "buyers": {},
-  "buyerRoleCfg": {},
-  "xp": {},
-  "levelCfg": {},
-  "automodCfg": {},
-  "spamTracker": {},
-  "reminders": {}
+  "triviaActive": {}
 }
