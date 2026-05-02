@@ -1,13 +1,17 @@
 {
   "name": "scripthub-bot",
-  "version": "2.0.0",
-  "description": "Script Hub Discord Bot - Full Upgraded",
+  "version": "4.0.0",
+  "description": "Script Hub Discord Bot - Full Featured",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.15.3",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "form-data": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
