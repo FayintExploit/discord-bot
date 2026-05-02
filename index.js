@@ -284,7 +284,12 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildModeration,
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildPresences,
   ],
+  presence: {
+    status: "online",
+    activities: [{ name: "Script Hub", type: 0 }]
+  }
 });
 
 // =====================================================
