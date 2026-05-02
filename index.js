@@ -638,6 +638,11 @@ const slashCommands = [
     .addStringOption(o=>o.setName("botchannel").setDescription("Voice channel ID for bot count").setRequired(false))
     .addStringOption(o=>o.setName("channelcount").setDescription("Voice channel ID for channel count").setRequired(false)),
   new SlashCommandBuilder().setName("statsremove").setDescription("ADMIN Remove server stats channels"),
+  // obfuscate & loadstring
+  new SlashCommandBuilder().setName("obfuscate").setDescription("Obfuscate a Lua script via WeAreDevs")
+    .addAttachmentOption(o=>o.setName("file").setDescription("Upload your .lua / .txt script file").setRequired(true)),
+  new SlashCommandBuilder().setName("loadstring").setDescription("Generate a loadstring from a URL")
+    .addStringOption(o=>o.setName("url").setDescription("Script URL").setRequired(true)),
   // anti-raid
   new SlashCommandBuilder().setName("antiraid").setDescription("ADMIN Toggle anti-raid protection")
     .addStringOption(o=>o.setName("action").setDescription("on/off").setRequired(true).addChoices(
@@ -2355,6 +2360,49 @@ const handleCommand = async (cmd, args, reply, userId, member, guild) => {
   }
 
   // =================================================
+  // OBFUSCATE & LOADSTRING
+  // =================================================
+  if (cmd === "obfuscate") {
+    const [fileUrl, fileName] = args;
+    if (!fileUrl) return reply(E.warn+" Please attach a .lua or .txt file!");
+    try {
+      // Download the file
+      const fileRes  = await fetch(fileUrl);
+      const script   = await fileRes.text();
+      if (!script.trim()) return reply(E.cross+" File is empty!");
+
+      // Send to WeAreDevs API
+      const FormData = (await import("form-data")).default;
+      const form     = new FormData();
+      form.append("script", script);
+
+      const res  = await fetch("https://wearedevs.net/api/obfuscate", { method:"POST", body:form, headers:form.getHeaders() });
+      const data = await res.json();
+
+      if (!data.obfuscated) return reply(E.cross+" Obfuscation failed! Invalid script or API error.");
+
+      // Send back as file
+      const buf  = Buffer.from(data.obfuscated, "utf-8");
+      const name = (fileName||"script").replace(/\.[^.]+$/,"")+"_obfuscated.txt";
+      return reply({ content:E.check+E.spark+" Script obfuscated by **WeAreDevs**!", files:[{ attachment:buf, name }] });
+    } catch(e) {
+      console.error("Obfuscate error:", e);
+      return reply(E.cross+" Error: "+e.message);
+    }
+  }
+
+  if (cmd === "loadstring") {
+    const url = args[0];
+    if (!url) return reply(E.warn+" Usage: `loadstring <url>`");
+    const emb = new EmbedBuilder()
+      .setTitle(E.scroll+E.spark+" Loadstring Generator")
+      .setDescription("```lua\nloadstring(game:HttpGet('"+url+"'))()\n```")
+      .setColor(0x00ff99)
+      .setFooter({ text:"Copy and paste into your executor!" });
+    return reply({ embeds:[emb] });
+  }
+
+  // =================================================
   // OWNER
   // =================================================
   if (cmd === "addcoins") {
@@ -2915,6 +2963,8 @@ client.on("interactionCreate", async (interaction) => {
       case "statusremove":     return [String(opts.getInteger("index"))];
       case "statusrotate":     return [opts.getString("action"), String(opts.getInteger("interval")||5)];
       case "statssetup":       return [opts.getString("memberchannel")||"", opts.getString("botchannel")||"", opts.getString("channelcount")||""];
+      case "obfuscate":        return [opts.getAttachment("file").url, opts.getAttachment("file").name];
+      case "loadstring":       return [opts.getString("url")];
       case "rep":              return [opts.getUser("user").id];
       case "repcheck":         return opts.getUser("user")?[opts.getUser("user").id]:[];
       case "poll":             return [opts.getString("question"), opts.getString("options"), String(opts.getInteger("minutes")||0)];
