@@ -823,26 +823,116 @@ const handleCommand = async (cmd, args, reply, userId, member, guild, message=nu
   if (cmd === "ping") return reply(E.ping+" **Pong!** "+E.green+" Online!");
 
   if (cmd === "help") {
-    const emb = new EmbedBuilder()
-      .setTitle(E.book+E.spark+" Script Hub Bot | All Commands")
-      .setColor(0x00ff99)
-      .setDescription(E.bars)
-      .addFields(
-        { name:E.search+" Scripts",     value:"`search` `latest` `random`",                          inline:true  },
-        { name:E.star+  " Rating",      value:"`rate` `review` `reviews`",                           inline:true  },
-        { name:E.bookmark+" Bookmarks", value:"`bookmark` `bookmarks` `unbookmark` `tag` `category`",inline:true  },
-        { name:E.coin+  " Economy",     value:"`balance` `daily` `transfer` `gamble` `shop` `buy` `coinlb`", inline:false },
-        { name:E.game+  " Private PS",  value:"`ps` `setps`",                                        inline:true  },
-        { name:E.chart+ " Stats",       value:"`stats` `leaderboard`",                               inline:true  },
-        { name:E.globe+ " Language",    value:"`lang id` / `lang en`",                               inline:true  },
-        { name:E.laugh+ " Fun",         value:"`8ball` `meme` `trivia` `coinflip` `rps`",            inline:false },
-        { name:E.welcome+" Server",     value:"`welcome` `logset` `giveaway` `giveawayend`",         inline:true  },
-        { name:E.shield+" Moderation",  value:"`ban` `unban` `kick` `timeout` `warn` `warns` `clearwarns` `mute` `unmute`", inline:false },
-        { name:E.crown+ " Owner",       value:"`autopost` `addcoins`",                               inline:true  },
-      )
-      .setFooter({ text:"Prefix: ! or ? | Also supports /slash" })
-      .setTimestamp();
-    return reply({ embeds:[emb] });
+    const pages = [
+      new EmbedBuilder()
+        .setTitle("\uD83D\uDCDC Script Hub Bot — Commands [1/5]")
+        .setColor(0x00ff99)
+        .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━\n\u2728 **Script & Rating**\n━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        .addFields(
+          { name:"\uD83D\uDD0E search <name>",   value:"Search scripts — shows embed with loadstring", inline:false },
+          { name:"\uD83C\uDD95 latest",           value:"5 latest scripts from rscripts.net",          inline:false },
+          { name:"\uD83C\uDFB2 random",           value:"Random script",                               inline:false },
+          { name:"\u2B50 rate <slug> <1-5>",      value:"Rate a script",                               inline:false },
+          { name:"\uD83D\uDCDD review <slug> <text>", value:"Write a review",                          inline:false },
+          { name:"\uD83D\uDCAC reviews <slug>",   value:"See reviews of a script",                     inline:false },
+        )
+        .setFooter({ text:"Page 1/5 | Prefix: ! or ? | Also /slash" }),
+
+      new EmbedBuilder()
+        .setTitle("\uD83D\uDCDC Script Hub Bot — Commands [2/5]")
+        .setColor(0x3498db)
+        .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━\n\uD83D\uDD16 **Bookmarks & Tags**\n━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        .addFields(
+          { name:"\uD83D\uDD16 bookmark <slug> <title> [tag]", value:"Save a script to bookmarks",        inline:false },
+          { name:"\uD83D\uDD16 bookmarks [tag]",               value:"View your bookmarks",               inline:false },
+          { name:"\uD83D\uDD16 unbookmark <slug>",             value:"Remove a bookmark",                 inline:false },
+          { name:"\uD83C\uDFF7\uFE0F tag <slug> <game>",       value:"Tag a script with game name",       inline:false },
+          { name:"\uD83C\uDFAE category <game>",               value:"Browse scripts by game tag",        inline:false },
+          { name:"\uD83D\uDCE3 obf <url> / attach file",       value:"Obfuscate Lua script (prefix only)",inline:false },
+          { name:"\uD83D\uDD17 loadstring <url>",              value:"Generate loadstring from URL",      inline:false },
+        )
+        .setFooter({ text:"Page 2/5 | Prefix: ! or ? | Also /slash" }),
+
+      new EmbedBuilder()
+        .setTitle("\uD83D\uDCDC Script Hub Bot — Commands [3/5]")
+        .setColor(0xf39c12)
+        .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━\n\uD83E\uFA99 **Economy & Fun**\n━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        .addFields(
+          { name:"\uD83E\uFA99 balance [@user]",  value:"Check coin balance",                           inline:false },
+          { name:"\uD83D\uDCC5 daily",             value:"Claim daily coins ("+100+" base)",            inline:false },
+          { name:"\uD83D\uDCB8 transfer @user <n>",value:"Send coins to another user",                  inline:false },
+          { name:"\uD83C\uDFB0 gamble <amount>",   value:"Gamble coins (45% win rate)",                 inline:false },
+          { name:"\uD83D\uDED2 shop",              value:"View coin shop items",                        inline:false },
+          { name:"\uD83D\uDED2 buy <id>",          value:"Buy item from shop",                          inline:false },
+          { name:"\uD83C\uDFC6 coinlb",            value:"Coin leaderboard",                            inline:false },
+          { name:"\u2B50 rep @user",               value:"Give reputation (+10 coins, 24h cooldown)",   inline:false },
+          { name:"\uD83C\uDFB2 coinflip",          value:"Flip a coin",                                 inline:false },
+          { name:"\uD83C\uDFAE rps <choice>",      value:"Rock paper scissors vs bot",                  inline:false },
+          { name:"\uD83E\uFA84 8ball <question>",  value:"Ask the magic 8ball",                         inline:false },
+          { name:"\uD83D\uDE02 meme",              value:"Random meme from Reddit",                     inline:false },
+          { name:"\uD83E\uDD14 trivia",            value:"Answer trivia for coins",                     inline:false },
+        )
+        .setFooter({ text:"Page 3/5 | Prefix: ! or ? | Also /slash" }),
+
+      new EmbedBuilder()
+        .setTitle("\uD83D\uDCDC Script Hub Bot — Commands [4/5]")
+        .setColor(0x9b59b6)
+        .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━\n\uD83C\uDFAB **Ticket & Premium Panel**\n━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        .addFields(
+          { name:"\uD83C\uDFAB ticket",                   value:"Open a ticket to buy premium script", inline:false },
+          { name:"\uD83C\uDFAB ticketsetup <ch> <logch>", value:"Setup ticket panel + log channel",    inline:false },
+          { name:"\uD83D\uDCDC addscript <id> <name> <price> <content>", value:"Add premium script to shop", inline:false },
+          { name:"\uD83D\uDCDC removescript <id>",        value:"Remove premium script",               inline:false },
+          { name:"\uD83D\uDCDC scriptlist",               value:"View all premium scripts",            inline:false },
+          { name:"\u2705 approve <ticketId>",             value:"Approve ticket, auto-send script",    inline:false },
+          { name:"\uD83D\uDEAB reject <ticketId> [reason]",value:"Reject a ticket",                   inline:false },
+          { name:"\uD83D\uDD11 genkey <scriptid> [n]",    value:"Generate premium key(s)",             inline:false },
+          { name:"\uD83D\uDD11 revokekey <key>",          value:"Revoke a key",                        inline:false },
+          { name:"\uD83D\uDD11 keylist <scriptid>",       value:"List all keys for a script",          inline:false },
+          { name:"\uD83D\uDCB3 setbuyer @user <scriptid>",value:"Manually set user as buyer",          inline:false },
+          { name:"\uD83D\uDCCA panelsetup <ch> <scriptid>",value:"Send premium buyer panel to channel",inline:false },
+        )
+        .setFooter({ text:"Page 4/5 | Prefix: ! or ? | Also /slash" }),
+
+      new EmbedBuilder()
+        .setTitle("\uD83D\uDCDC Script Hub Bot — Commands [5/5]")
+        .setColor(0xe74c3c)
+        .setDescription("━━━━━━━━━━━━━━━━━━━━━━━━━━\n\uD83D\uDEE1\uFE0F **Server & Moderation**\n━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        .addFields(
+          { name:"\uD83D\uDEE1\uFE0F automod on/off",      value:"Toggle automod (spam/link/word filter)", inline:false },
+          { name:"\uD83D\uDEAB addfilter <word>",          value:"Add word to filter list",              inline:false },
+          { name:"\uD83D\uDEA8 antiraid on/off [n] [action]",value:"Anti-raid protection",              inline:false },
+          { name:"\uD83D\uDC4B welcome <ch> [msg]",        value:"Set welcome message channel",         inline:false },
+          { name:"\uD83D\uDCCB logset <ch>",               value:"Set mod log channel",                 inline:false },
+          { name:"\uD83C\uDF7F giveaway <prize> <min>",    value:"Start a giveaway",                    inline:false },
+          { name:"\uD83C\uDFAD rolemenu <ch> <roles>",     value:"Create role selection menu",          inline:false },
+          { name:"\uD83D\uDCCC sticky <ch> [msg]",         value:"Set sticky message in channel",       inline:false },
+          { name:"\uD83E\uDD1D autorole add/remove/list",  value:"Auto-give role on join",              inline:false },
+          { name:"\uD83D\uDEAB ban/unban/kick/timeout",    value:"Server moderation commands",          inline:false },
+          { name:"\u26A0\uFE0F warn/warns/clearwarns",     value:"Warning system",                      inline:false },
+          { name:"\uD83D\uDD07 mute/unmute <min>",         value:"Mute user from bot commands",         inline:false },
+          { name:"\uD83D\uDCBE backup / restore",          value:"Export or restore full database",     inline:false },
+          { name:"\uD83D\uDD04 statusrotate / statusadd",  value:"Bot status rotation system",          inline:false },
+          { name:"\uD83D\uDCCA statssetup",                value:"Live server stats voice channels",    inline:false },
+        )
+        .setFooter({ text:"Page 5/5 | Prefix: ! or ? | Also /slash" }),
+    ];
+
+    let pg = 0;
+    const navRow = () => new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("help_prev").setLabel("\u2B05").setStyle(ButtonStyle.Secondary).setDisabled(pg===0),
+      new ButtonBuilder().setCustomId("help_next").setLabel("\u27A1").setStyle(ButtonStyle.Primary).setDisabled(pg===pages.length-1),
+    );
+    const sent = await reply({ embeds:[pages[0]], components:[navRow()], fetchReply:true });
+    const col  = sent.createMessageComponentCollector({ time:120000 });
+    col.on("collect", async i => {
+      if (i.user.id!==userId) return i.reply({ content:"\uD83D\uDEAB Not yours!", ephemeral:true });
+      if (i.customId==="help_next") pg++;
+      if (i.customId==="help_prev") pg--;
+      await i.update({ embeds:[pages[pg]], components:[navRow()] });
+    });
+    col.on("end", ()=>sent.edit({ components:[] }).catch(()=>{}));
+    return;
   }
 
   if (cmd === "lang") {
@@ -858,14 +948,19 @@ const handleCommand = async (cmd, args, reply, userId, member, guild, message=nu
   if (cmd === "latest") {
     const res  = await fetch("https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc");
     const data = await res.json();
-    const med  = [E.gold,E.silver,E.bronze,"4\uFE0F\u20E3","5\uFE0F\u20E3"];
-    const emb  = new EmbedBuilder().setTitle(E.new_+E.fire+" Latest Scripts").setColor(0x00ff99)
-      .setFooter({ text:"Fetched from rscripts.net" }).setTimestamp();
-    data.scripts.slice(0,5).forEach((s,i)=>{
-      const avg = avgRating(s.slug||s.id);
-      emb.addFields({ name:med[i]+" "+s.title,
-        value:(avg?stars(avg)+" **("+avg+"/5)**":E.sleep+" No ratings")+"\n"+E.link+" https://rscripts.net/script/"+(s.slug||s.id) });
-    });
+    const medals = ["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49","4\uFE0F\u20E3","5\uFE0F\u20E3"];
+    const emb = new EmbedBuilder()
+      .setTitle("\uD83C\uDD95 Latest Scripts")
+      .setColor(0x00ff99)
+      .setDescription(
+        data.scripts.slice(0,5).map((s,i)=>{
+          const avg = avgRating(s.slug||s.id);
+          const slug = s.slug||s.id;
+          return medals[i]+" **"+s.title+"**\n"+(avg?stars(avg)+" ("+avg+"/5)":"\uD83D\uDCA4 No ratings")+"\n\uD83D\uDD17 https://rscripts.net/script/"+slug;
+        }).join("\n\n")
+      )
+      .setFooter({ text:"rscripts.net | "+new Date().toLocaleDateString() })
+      .setTimestamp();
     return reply({ embeds:[emb] });
   }
 
@@ -873,11 +968,19 @@ const handleCommand = async (cmd, args, reply, userId, member, guild, message=nu
     const res  = await fetch("https://rscripts.net/api/v2/scripts?page=1");
     const data = await res.json();
     const s    = data.scripts[Math.floor(Math.random()*data.scripts.length)];
-    const avg  = avgRating(s.slug||s.id);
+    const slug = s.slug||s.id;
+    const avg  = avgRating(slug);
     const emb  = new EmbedBuilder()
-      .setTitle(E.dice+E.spark+" Random: "+s.title)
-      .setDescription((avg?E.star+" **Rating:** "+stars(avg)+" **("+avg+"/5)**\n":E.sleep+" No ratings\n")+"\n"+E.link+" https://rscripts.net/script/"+(s.slug||s.id))
-      .setColor(0x9b59b6).setFooter({ text:"Try again for another!" });
+      .setTitle("\uD83C\uDFB2 Random Script")
+      .setColor(0x9b59b6)
+      .setDescription(
+        "**"+s.title+"**\n\n"+
+        (avg?"\u2B50 Rating: "+stars(avg)+" ("+avg+"/5)":"\uD83D\uDCA4 No ratings yet")+"\n\n"+
+        "\uD83D\uDD17 https://rscripts.net/script/"+slug+"\n\n"+
+        "```lua\nloadstring(game:HttpGet(\"https://rscripts.net/script/"+slug+"\"))()\n```"
+      )
+      .setFooter({ text:"Rerun command for another random script!" })
+      .setTimestamp();
     return reply({ embeds:[emb] });
   }
 
@@ -891,43 +994,43 @@ const handleCommand = async (cmd, args, reply, userId, member, guild, message=nu
     if (!scripts||!scripts.length) return reply(t(userId,"notFound"));
 
     let page = 0;
-    const getPage = ()=> scripts.slice(page*5, page*5+5);
-    const buildMenu = ()=> new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder().setCustomId("searchmenu")
-        .setPlaceholder("Page "+(page+1)+" | Select a script...")
-        .addOptions(getPage().map((s,i)=>{
-          const avg = avgRating(s.slug||s.id);
-          return { label:s.title.substring(0,100), description:avg?"Rating: "+avg+"/5":"No rating", value:String(page*5+i) };
-        }))
+
+    const buildEmbed = (i) => {
+      const s    = scripts[i];
+      const slug = s.slug||s.id;
+      const avg  = avgRating(slug);
+      const tags = (db.scriptTags?.[slug]||[]).join(", ")||"none";
+      return new EmbedBuilder()
+        .setTitle("\uD83D\uDCDC "+s.title)
+        .setColor(0x00ff99)
+        .setDescription(
+          "\uD83D\uDC64 **Creator:** "+(s.user?.username||"Unknown")+"\n"+
+          (avg?"\u2B50 **Rating:** "+stars(avg)+" **("+avg+"/5)**":"\uD83D\uDCA4 No ratings yet")+"\n"+
+          "\uD83C\uDFF7\uFE0F **Tags:** "+tags+"\n\n"+
+          "\uD83D\uDD17 **Link:**\nhttps://scriptblox.com/script/"+slug+"\n\n"+
+          "\uD83D\uDCDC **Loadstring:**\n```lua\nloadstring(game:HttpGet(\"https://scriptblox.com/raw/"+slug+"\"))()\n```"
+        )
+        .setThumbnail(s.image||null)
+        .setFooter({ text:"Result "+(i+1)+" of "+scripts.length+" | /rate "+slug+" to rate!" })
+        .setTimestamp();
+    };
+
+    const buildNav = () => new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("s_prev").setLabel("\u2B05 Prev").setStyle(ButtonStyle.Secondary).setDisabled(page===0),
+      new ButtonBuilder().setCustomId("s_next").setLabel("Next \u27A1").setStyle(ButtonStyle.Primary).setDisabled(page>=scripts.length-1),
     );
-    const nav = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("s_prev").setLabel("Prev").setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("s_next").setLabel("Next").setStyle(ButtonStyle.Primary)
-    );
-    const sent = await reply({ content:E.search+" **Results for:** `"+q+"`", components:[buildMenu(),nav], fetchReply:true });
+
+    const sent = await reply({ content:E.search+" **Results for:** `"+q+"`", embeds:[buildEmbed(0)], components:[buildNav()], fetchReply:true });
     const col  = sent.createMessageComponentCollector({ time:120000 });
+
     col.on("collect", async (i)=>{
       if (i.user.id!==userId) return i.reply({ content:E.ban+" Not yours!", ephemeral:true });
-      if (i.customId==="s_next"){ page++; if(page*5>=scripts.length)page--; }
-      if (i.customId==="s_prev"){ page--; if(page<0)page=0; }
-      if (i.customId==="searchmenu") {
-        const s    = scripts[parseInt(i.values[0])];
-        const slug = s.slug||s.id;
-        const avg  = avgRating(slug);
-        const tags = (db.scriptTags[slug]||[]).join(", ")||"none";
-        const emb  = new EmbedBuilder()
-          .setTitle(E.scroll+E.spark+" "+s.title)
-          .setDescription(
-            E.user+" **Creator:** "+(s.user?.username||"Unknown")+"\n"+
-            (avg?E.star+" **Rating:** "+stars(avg)+" **("+avg+"/5)**\n":E.sleep+" No ratings\n")+
-            E.tag+" **Tags:** "+tags+"\n"+
-            "\n```lua\nloadstring(game:HttpGet(\"https://scriptblox.com/raw/"+slug+"\"))()\n```"
-          ).setColor(0x00ff99).setFooter({ text:"Slug: "+slug });
-        if (s.image) emb.setThumbnail(s.image);
-        return i.reply({ embeds:[emb] });
-      }
-      await i.update({ components:[buildMenu(),nav] });
+      if (i.customId==="s_next") page++;
+      if (i.customId==="s_prev") page--;
+      await i.update({ embeds:[buildEmbed(page)], components:[buildNav()] });
     });
+
+    col.on("end", ()=>{ sent.edit({ components:[] }).catch(()=>{}); });
   }
 
   if (cmd === "rate") {
