@@ -2653,15 +2653,18 @@ client.on("messageCreate", async (message) => {
     }
   }
 
+  // ===== PREFIX CHECK =====
+  const used = PREFIX.find(p=>message.content.startsWith(p));
+  if (!used) return;
+  const args = message.content.slice(used.length).trim().split(/\s+/);
+  const cmd  = args.shift().toLowerCase();
+
   // ===== CUSTOM COMMANDS =====
-  if (guildId && used) {
+  if (guildId) {
     const customCmd = db.customCmds?.[guildId]?.[cmd];
     if (customCmd) return message.reply(customCmd.response);
   }
-  const used=PREFIX.find(p=>message.content.startsWith(p));
-  if (!used) return;
-  const args=message.content.slice(used.length).trim().split(/\s+/);
-  const cmd=args.shift().toLowerCase();
+
   try {
     await handleCommand(cmd, args, (c)=>message.reply(c), message.author.id, message.member, message.guild, message);
   } catch(e) {
